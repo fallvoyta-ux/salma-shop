@@ -38,6 +38,9 @@ export const paymentService = {
     }
 
     if (paymentMethod === 'wave') {
+      const waveSendUrl = `https://wave.com/send?phone=${config.storeWhatsApp}&amount=${amount}`;
+      const waveAppDeepLink = `wave://send?phone=${config.storeWhatsApp}&amount=${amount}`;
+
       if (isLive && config.wave.apiKey) {
         // En mode réel avec l'API Wave officielle
         try {
@@ -59,26 +62,35 @@ export const paymentService = {
           if (data.wave_launch_url) {
             checkoutUrl = data.wave_launch_url;
             transactionId = data.id || transactionId;
+          } else {
+            checkoutUrl = waveSendUrl;
           }
         } catch (err) {
           console.error('Erreur API Wave Live:', err);
+          checkoutUrl = waveSendUrl;
         }
       } else {
-        // Mode développement / Bac à sable Wave (clés non encore configurées)
-        checkoutUrl = `${config.clientUrl}/order-confirmation/${orderNumber}?simulated_gateway=wave&amount=${amount}`;
-        instructions = `Mode Test : L'intégration Wave est prête pour les identifiants réels de la propriétaire (WAVE_API_KEY dans .env). En production, le client est redirigé vers l'application mobile Wave pour valider ${amount.toLocaleString('fr-FR')} FCFA.`;
+        // Lien Wave direct vers le compte officiel Salma Shop (+221 77 201 86 97)
+        checkoutUrl = waveSendUrl;
+        instructions = `Lien direct vers l'application Wave de Salma Shop (${config.storePhone}) pour régler ${amount.toLocaleString('fr-FR')} FCFA.`;
       }
 
       db.execute(`
         INSERT INTO payments (order_id, provider, transaction_id, amount, currency, status, raw_response)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, [order.id, 'wave', transactionId, amount, currency, 'pending', JSON.stringify({ isLive, provider: 'wave' })]);
+      `, [order.id, 'wave', transactionId, amount, currency, 'pending', JSON.stringify({ isLive, provider: 'wave', waveSendUrl })]);
 
       return {
         success: true,
         provider: 'wave',
         transactionId,
         checkoutUrl,
+        waveSendUrl,
+        waveAppDeepLink,
+        recipientName: config.storeName,
+        recipientPhone: config.storePhone,
+        recipientWhatsApp: config.storeWhatsApp,
+        amount,
         instructions,
         isLive,
         status: 'pending'
@@ -86,24 +98,33 @@ export const paymentService = {
     }
 
     if (paymentMethod === 'orange_money') {
+      const ussdCode = `*144*1*1*${config.storeWhatsApp}*${amount}#`;
+      const omTelUrl = `tel:${encodeURIComponent(ussdCode)}`;
+      checkoutUrl = omTelUrl;
+
       if (isLive && config.orangeMoney.merchantKey) {
         // En mode réel avec l'API Orange Money Web Payment
         instructions = `Validez votre paiement de ${amount.toLocaleString('fr-FR')} FCFA sur votre téléphone Orange Money (#144# ou application Orange Money).`;
       } else {
-        checkoutUrl = `${config.clientUrl}/order-confirmation/${orderNumber}?simulated_gateway=orange_money&amount=${amount}`;
-        instructions = `Mode Test : L'intégration Orange Money est prête (ORANGE_MONEY_MERCHANT_KEY dans .env). Le client recevra l'invite USSD Orange Money pour payer ${amount.toLocaleString('fr-FR')} FCFA.`;
+        instructions = `Composer le code USSD ${ussdCode} ou transférer ${amount.toLocaleString('fr-FR')} FCFA au ${config.storePhone} (Salma Shop).`;
       }
 
       db.execute(`
         INSERT INTO payments (order_id, provider, transaction_id, amount, currency, status, raw_response)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, [order.id, 'orange_money', transactionId, amount, currency, 'pending', JSON.stringify({ isLive, provider: 'orange_money' })]);
+      `, [order.id, 'orange_money', transactionId, amount, currency, 'pending', JSON.stringify({ isLive, provider: 'orange_money', ussdCode })]);
 
       return {
         success: true,
         provider: 'orange_money',
         transactionId,
         checkoutUrl,
+        ussdCode,
+        omTelUrl,
+        recipientName: config.storeName,
+        recipientPhone: config.storePhone,
+        recipientWhatsApp: config.storeWhatsApp,
+        amount,
         instructions,
         isLive,
         status: 'pending'

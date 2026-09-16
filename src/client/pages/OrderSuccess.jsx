@@ -38,13 +38,31 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
   const order = orderData ? orderData.order : null;
   const items = orderData ? orderData.items : [];
 
+  // Liens de paiement direct
+  const whatsappPhone = (settings.store_whatsapp || '221772018697').replace(/[^0-9]/g, '');
+  const displayPhone = settings.store_phone || '+221 77 201 86 97';
+  const totalAmount = order ? order.total_amount : 0;
+  const paymentMethod = order ? order.payment_method : 'wave';
+
+  const waveUrl = `https://wave.com/send?phone=${whatsappPhone}&amount=${totalAmount}`;
+  const omUssdUrl = `tel:*144*1*1*${whatsappPhone}*${totalAmount}%23`;
+
   // Lien WhatsApp direct
-  const whatsappPhone = (settings.store_whatsapp || '221771234567').replace(/[^0-9]/g, '');
-  const whatsappMsg = `Bonjour ${settings.store_name} ! 👋\n\n` +
+  const whatsappMsg = `Bonjour ${settings.store_name || 'Salma Shop'} ! 👋\n\n` +
     `Je viens d'effectuer la commande *${orderNumber}* sur votre boutique en ligne.\n` +
-    `Montant total : ${order ? (order.total_amount).toLocaleString('fr-FR') : ''} FCFA.\n` +
-    `Pouvez-vous me confirmer la bonne prise en compte et le délai de livraison ? Merci !`;
+    `💰 Montant total : ${totalAmount.toLocaleString('fr-FR')} FCFA.\n` +
+    `💳 Moyen de paiement : ${paymentMethod.toUpperCase()}.\n` +
+    `Pouvez-vous me confirmer la réception et le délai de livraison ? Merci !`;
   const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(whatsappMsg)}`;
+
+  const [copied, setCopied] = useState(false);
+  const handleCopyNumber = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(displayPhone);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    }
+  };
 
   return (
     <div className="section">
@@ -87,7 +105,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
           </h1>
 
           <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', maxWidth: '540px', margin: '0 auto 1.5rem' }}>
-            Votre commande a bien été prise en compte et est en cours de traitement par notre équipe à Dakar.
+            Votre commande a bien été enregistrée et est prête pour la validation à Dakar.
           </p>
 
           <div
@@ -108,6 +126,168 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
             N° de Commande : <span style={{ color: 'var(--primary)' }}>{orderNumber}</span>
           </div>
 
+          {/* SECTION DÉDIÉE PAIEMENT DIRECT SALMA SHOP */}
+          {paymentMethod === 'wave' && (
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #0284c7 0%, #00B2FE 100%)',
+                color: '#fff',
+                padding: '2rem',
+                borderRadius: 'var(--radius-lg)',
+                boxShadow: '0 8px 25px rgba(0, 178, 254, 0.35)',
+                marginBottom: '2.5rem',
+                textAlign: 'center'
+              }}
+            >
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.2)', padding: '4px 14px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 700, marginBottom: '1rem' }}>
+                🌊 PAIEMENT SÉCURISÉ WAVE SÉNÉGAL
+              </div>
+
+              <h2 style={{ fontSize: '1.6rem', color: '#fff', marginBottom: '0.5rem', fontWeight: 800 }}>
+                Validez votre paiement de {formatPrice(totalAmount)}
+              </h2>
+
+              <p style={{ fontSize: '0.95rem', opacity: 0.95, maxWidth: '500px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
+                Cliquez sur le bouton ci-dessous pour ouvrir directement l'application <strong>Wave</strong> vers le compte officiel <strong>Salma Shop</strong> avec le montant pré-rempli.
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxWidth: '420px', margin: '0 auto 1.5rem' }}>
+                <a
+                  href={waveUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-lg"
+                  style={{
+                    background: '#fff',
+                    color: '#0284c7',
+                    fontWeight: 800,
+                    fontSize: '1.1rem',
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.15)',
+                    padding: '1rem 1.5rem',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px'
+                  }}
+                >
+                  <span>🌊</span> Ouvrir l'application Wave pour Valider
+                </a>
+
+                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                  <button
+                    onClick={handleCopyNumber}
+                    style={{
+                      background: 'rgba(255,255,255,0.18)',
+                      border: '1px solid rgba(255,255,255,0.4)',
+                      color: '#fff',
+                      padding: '8px 16px',
+                      borderRadius: 'var(--radius-md)',
+                      fontSize: '0.88rem',
+                      cursor: 'pointer',
+                      fontWeight: 600
+                    }}
+                  >
+                    {copied ? '✓ Numéro copié !' : `📋 Numéro Wave : ${displayPhone}`}
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ fontSize: '0.82rem', opacity: 0.9, borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '1rem' }}>
+                Après validation dans Wave, cliquez sur le bouton WhatsApp ci-dessous pour nous envoyer votre capture de reçu.
+              </div>
+            </div>
+          )}
+
+          {paymentMethod === 'orange_money' && (
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)',
+                color: '#fff',
+                padding: '2rem',
+                borderRadius: 'var(--radius-lg)',
+                boxShadow: '0 8px 25px rgba(249, 115, 22, 0.35)',
+                marginBottom: '2.5rem',
+                textAlign: 'center'
+              }}
+            >
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.2)', padding: '4px 14px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 700, marginBottom: '1rem' }}>
+                🟠 PAIEMENT ORANGE MONEY SÉNÉGAL
+              </div>
+
+              <h2 style={{ fontSize: '1.6rem', color: '#fff', marginBottom: '0.5rem', fontWeight: 800 }}>
+                Réglez {formatPrice(totalAmount)} via Orange Money
+              </h2>
+
+              <p style={{ fontSize: '0.95rem', opacity: 0.95, maxWidth: '500px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
+                Composez le code USSD sur votre mobile ou effectuez un transfert au compte marchand <strong>Salma Shop</strong> :
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxWidth: '420px', margin: '0 auto 1.5rem' }}>
+                <a
+                  href={omUssdUrl}
+                  className="btn btn-lg"
+                  style={{
+                    background: '#fff',
+                    color: '#ea580c',
+                    fontWeight: 800,
+                    fontSize: '1.1rem',
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.15)',
+                    padding: '1rem 1.5rem',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px'
+                  }}
+                >
+                  <span>📞</span> Composer le code #144# sur mobile
+                </a>
+
+                <button
+                  onClick={handleCopyNumber}
+                  style={{
+                    background: 'rgba(255,255,255,0.18)',
+                    border: '1px solid rgba(255,255,255,0.4)',
+                    color: '#fff',
+                    padding: '8px 16px',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.88rem',
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  {copied ? '✓ Numéro copié !' : `📋 Numéro Orange Money : ${displayPhone}`}
+                </button>
+              </div>
+
+              <div style={{ fontSize: '0.82rem', opacity: 0.9, borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '1rem' }}>
+                Indiquez la référence <strong>{orderNumber}</strong> dans le motif du transfert.
+              </div>
+            </div>
+          )}
+
+          {paymentMethod === 'cash_on_delivery' && (
+            <div
+              style={{
+                background: '#f0fdf4',
+                border: '2px solid #86efac',
+                color: '#166534',
+                padding: '1.5rem',
+                borderRadius: 'var(--radius-lg)',
+                marginBottom: '2.5rem',
+                textAlign: 'center'
+              }}
+            >
+              <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', fontWeight: 800 }}>
+                💵 Paiement en Espèces à la Livraison
+              </h3>
+              <p style={{ fontSize: '0.95rem', margin: '0 auto 0.5rem', maxWidth: '500px' }}>
+                Veuillez prévoir le montant exact de <strong>{formatPrice(totalAmount)}</strong> à remettre à notre livreur lors de la remise de votre colis à Dakar.
+              </p>
+            </div>
+          )}
+
           {/* Boutons d'action : WhatsApp et Impression */}
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2.5rem' }}>
             <a
@@ -115,8 +295,9 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
               target="_blank"
               rel="noreferrer"
               className="btn btn-whatsapp btn-lg"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', fontWeight: 700 }}
             >
-              💬 Confirmer ma commande sur WhatsApp
+              <span>💬</span> Confirmer ma commande sur WhatsApp
             </a>
 
             <button
@@ -191,7 +372,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
 
           <div style={{ marginTop: '2.5rem' }}>
             <button className="btn btn-outline" onClick={() => onNavigate('/shop')}>
-              Continuer mon shopping sur Teranga Shop
+              Continuer mon shopping sur Salma Shop
             </button>
           </div>
         </div>

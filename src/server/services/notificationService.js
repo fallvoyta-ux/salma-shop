@@ -19,7 +19,7 @@ export const notificationService = {
       `🚚 *Frais de livraison* : ${(order.delivery_fee).toLocaleString('fr-FR')} FCFA\n` +
       `💰 *TOTAL À PAYER* : ${(order.total_amount).toLocaleString('fr-FR')} FCFA\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
-      `Merci pour votre confiance avec Teranga Shop !`;
+      `Merci pour votre confiance avec ${config.storeName} !`;
   },
 
   /**

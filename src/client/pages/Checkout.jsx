@@ -109,7 +109,17 @@ export default function Checkout({ onNavigate }) {
       if (data.success && data.order) {
         showToast('Commande enregistrée avec succès !', 'success');
         clearCart();
-        onNavigate(`/order-confirmation/${data.order.order_number}`);
+
+        // Si paiement Wave, ouvrir directement le lien Wave de Salma Shop
+        if (paymentMethod === 'wave' && data.payment?.checkoutUrl) {
+          try {
+            window.open(data.payment.checkoutUrl, '_blank');
+          } catch (e) {
+            console.log('Ouverture Wave:', e);
+          }
+        }
+
+        onNavigate(`/order-confirmation/${data.order.order_number}?pay=${paymentMethod}`);
       } else {
         showToast(data.message || 'Erreur lors de la validation de la commande.', 'error');
       }
@@ -478,8 +488,31 @@ export default function Checkout({ onNavigate }) {
                 type="submit"
                 className="btn btn-primary btn-block btn-lg"
                 disabled={submitting}
+                style={{
+                  background: paymentMethod === 'wave' 
+                    ? '#00B2FE' 
+                    : paymentMethod === 'orange_money' 
+                    ? '#f97316' 
+                    : undefined,
+                  borderColor: paymentMethod === 'wave' 
+                    ? '#00B2FE' 
+                    : paymentMethod === 'orange_money' 
+                    ? '#f97316' 
+                    : undefined,
+                  fontSize: '1.05rem',
+                  fontWeight: 800,
+                  boxShadow: paymentMethod === 'wave' ? '0 4px 14px rgba(0, 178, 254, 0.4)' : undefined
+                }}
               >
-                {submitting ? 'Validation de votre commande...' : `Confirmer & Payer ${formatPrice(grandTotal)}`}
+                {submitting ? 'Traitement en cours...' : (
+                  paymentMethod === 'wave'
+                    ? `🌊 Valider & Ouvrir Wave (${formatPrice(grandTotal)})`
+                    : paymentMethod === 'orange_money'
+                    ? `🟠 Valider & Payer par Orange Money (${formatPrice(grandTotal)})`
+                    : paymentMethod === 'card'
+                    ? `💳 Payer par Carte Bancaire (${formatPrice(grandTotal)})`
+                    : `💵 Confirmer la commande (${formatPrice(grandTotal)})`
+                )}
               </button>
 
               <div style={{ marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5, textAlign: 'center' }}>
