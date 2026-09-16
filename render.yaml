@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: salma-shop
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node src/server/index.js
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: STORE_NAME
+        value: Salma Shop
+      - key: STORE_PHONE
+        value: "+221 77 201 86 97"
+      - key: STORE_WHATSAPP
+        value: "221772018697"
+      - key: STORE_EMAIL
+        value: contact@salmashop.sn
+      - key: STORE_ADDRESS
+        value: "Dakar, Sénégal"
+      - key: DEFAULT_CURRENCY
+        value: FCFA
+      - key: PAYMENT_MODE
+        value: test
+      - key: JWT_SECRET
+        generateValue: true

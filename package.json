@@ -4,6 +4,9 @@
   "description": "Application e-commerce professionnelle pour le Sénégal avec Wave, Orange Money, gestion des stocks et espace administrateur complet",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "scripts": {
     "dev:server": "node src/server/index.js",
     "dev:client": "vite",
