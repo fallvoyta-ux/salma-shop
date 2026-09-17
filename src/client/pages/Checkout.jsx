@@ -107,14 +107,10 @@ export default function Checkout({ onNavigate }) {
       const data = await res.json();
 
       if (data.success && data.order) {
-        showToast('Commande enregistrée avec succès !', 'success');
+        showToast('Commande enregistrée ! Redirection vers Salma Shop...', 'success');
         clearCart();
 
-        // 1. Détection mobile (Android / iOS)
-        const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
-        const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-        // 2. Si Wave sélectionné : copier automatiquement le numéro 77 201 86 97
+        // Si Wave sélectionné : copier automatiquement le numéro 77 201 86 97
         if (paymentMethod === 'wave') {
           try {
             if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -123,18 +119,12 @@ export default function Checkout({ onNavigate }) {
           } catch (e) {
             console.warn('Erreur copie presse-papier:', e);
           }
-
-          // Déclencher l'ouverture de l'application Wave directement sur smartphone
-          if (isAndroid) {
-            window.location.href = 'intent:#Intent;package=com.wave.personal;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.wave.personal;end';
-          } else if (isIOS) {
-            window.location.href = 'wave://';
-          }
         }
 
-        // 3. Si l'API Wave officielle fournit un lien de paiement direct hébergé
-        if (data.payment && data.payment.checkoutUrl && data.payment.checkoutUrl.startsWith('http')) {
-          window.location.href = data.payment.checkoutUrl;
+        // REDIRECTION DIRECTE SUR LE NUMÉRO DE SALMA SHOP (+221 77 201 86 97) VIA WHATSAPP
+        if (data.whatsappUrl) {
+          window.history.pushState({}, '', `/order-confirmation/${data.order.order_number}`);
+          window.location.href = data.whatsappUrl;
           return;
         }
 
@@ -512,30 +502,30 @@ export default function Checkout({ onNavigate }) {
                     ? '#00B2FE' 
                     : paymentMethod === 'orange_money' 
                     ? '#f97316' 
-                    : undefined,
+                    : '#16a34a',
                   borderColor: paymentMethod === 'wave' 
                     ? '#00B2FE' 
                     : paymentMethod === 'orange_money' 
                     ? '#f97316' 
-                    : undefined,
+                    : '#16a34a',
                   fontSize: '1.05rem',
                   fontWeight: 800,
-                  boxShadow: paymentMethod === 'wave' ? '0 4px 14px rgba(0, 178, 254, 0.4)' : undefined
+                  boxShadow: paymentMethod === 'wave' 
+                    ? '0 4px 14px rgba(0, 178, 254, 0.4)' 
+                    : '0 4px 14px rgba(22, 163, 74, 0.35)'
                 }}
               >
-                {submitting ? 'Traitement en cours...' : (
+                {submitting ? 'Validation en cours...' : (
                   paymentMethod === 'wave'
-                    ? `🌊 Valider & Ouvrir Wave (${formatPrice(grandTotal)})`
+                    ? `🌊 Valider & Envoyer au +221 77 201 86 97 (${formatPrice(grandTotal)})`
                     : paymentMethod === 'orange_money'
-                    ? `🟠 Valider & Payer par Orange Money (${formatPrice(grandTotal)})`
-                    : paymentMethod === 'card'
-                    ? `💳 Payer par Carte Bancaire (${formatPrice(grandTotal)})`
-                    : `💵 Confirmer la commande (${formatPrice(grandTotal)})`
+                    ? `🟠 Valider & Envoyer au +221 77 201 86 97 (${formatPrice(grandTotal)})`
+                    : `📲 Valider & Envoyer à Salma Shop (${formatPrice(grandTotal)})`
                 )}
               </button>
 
-              <div style={{ marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5, textAlign: 'center' }}>
-                En validant votre commande, vous recevrez une confirmation instantanée avec suivi en direct et contact WhatsApp.
+              <div style={{ marginTop: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5, textAlign: 'center' }}>
+                ⚡ En validant, votre commande est enregistrée et transmise directement sur le WhatsApp de <strong>Salma Shop (+221 77 201 86 97)</strong>.
               </div>
             </div>
           </div>

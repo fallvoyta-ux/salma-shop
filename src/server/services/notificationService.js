@@ -7,19 +7,27 @@ export const notificationService = {
   generateOrderWhatsAppMessage(order, items = []) {
     let itemsText = items.map(i => `• ${i.product_name || i.name || 'Article'} (x${i.quantity}) : ${(i.subtotal).toLocaleString('fr-FR')} FCFA`).join('\n');
     
-    return `🛍️ *NOUVELLE COMMANDE - ${config.storeName}*\n` +
+    let paymentText = order.payment_method ? order.payment_method.toUpperCase() : 'WAVE';
+    if (order.payment_method === 'wave') {
+      paymentText = '🌊 WAVE (Transfert vers 77 201 86 97)';
+    } else if (order.payment_method === 'orange_money') {
+      paymentText = '🟠 ORANGE MONEY (Transfert vers 77 201 86 97)';
+    } else if (order.payment_method === 'cash_on_delivery') {
+      paymentText = '💵 PAIEMENT EN ESPÈCES À LA LIVRAISON';
+    }
+
+    return `🛍️ *COMMANDE SALMA SHOP (${order.order_number})*\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
-      `📦 *Numéro* : ${order.order_number}\n` +
       `👤 *Client* : ${order.customer_name}\n` +
       `📞 *Téléphone* : ${order.customer_phone}\n` +
       `📍 *Livraison* : ${order.delivery_city}, ${order.delivery_address}\n` +
-      `💳 *Paiement* : ${order.payment_method.toUpperCase()} (${order.payment_status})\n` +
+      `💳 *Mode de Règlement* : ${paymentText}\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
-      `🛒 *Articles commandés* :\n${itemsText}\n\n` +
-      `🚚 *Frais de livraison* : ${(order.delivery_fee).toLocaleString('fr-FR')} FCFA\n` +
+      `🛒 *Articles demandés* :\n${itemsText}\n\n` +
+      `🚚 *Livraison* : ${(order.delivery_fee).toLocaleString('fr-FR')} FCFA\n` +
       `💰 *TOTAL À PAYER* : ${(order.total_amount).toLocaleString('fr-FR')} FCFA\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
-      `Merci pour votre confiance avec ${config.storeName} !`;
+      `Bonjour Salma Shop ! 👋 Je viens de valider cette commande sur votre boutique en ligne. Merci de me confirmer la livraison ! 🌹`;
   },
 
   /**
