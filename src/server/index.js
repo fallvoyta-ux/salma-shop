@@ -97,7 +97,7 @@ if (fs.existsSync(distPath)) {
 app.use(errorHandler);
 
 // Démarrage du serveur et initialisation automatique si nécessaire
-app.listen(config.port, async () => {
+app.listen(config.port, '0.0.0.0', async () => {
   console.log(`\n======================================================`);
   console.log(`🚀 SALMA SHOP - CHIC LADIES DAKAR (Serveur Démarré)`);
   console.log(`🌐 URL : http://localhost:${config.port}`);
