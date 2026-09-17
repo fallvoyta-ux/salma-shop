@@ -1,0 +1,23 @@
+name: Keep-Alive 24/7 (Anti-Sleep Render)
+
+on:
+  schedule:
+    # Déclenchement automatique toutes les 10 minutes en continu dans le cloud
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Déclencheur manuel possible
+
+jobs:
+  ping-render:
+    name: Ping Salma Shop 24/7
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Keep-Alive
+        run: |
+          echo "Envoi du ping de maintien d'éveil vers Salma Shop..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://salmashop.onrender.com/api/health)
+          echo "Statut du serveur Salma Shop: HTTP $STATUS"
+          if [ "$STATUS" -eq 200 ]; then
+            echo "✅ Salma Shop est bien réveillé et disponible pour les clients !"
+          else
+            echo "⚠️ Le serveur est en cours de réveil ou a retourné HTTP $STATUS"
+          fi
