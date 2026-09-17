@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: salma-shop
+    name: salmashop-dakar
     env: node
     plan: free
     buildCommand: npm install && npm run build
