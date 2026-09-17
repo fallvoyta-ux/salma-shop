@@ -21,14 +21,12 @@ export async function seedDatabase() {
     { key: 'store_logo', value: '/logo.jpg', description: 'Chemin du logo officiel' }
   ];
 
-  const upsertSetting = db.getRawDb().prepare(`
-    INSERT INTO settings (key, value, description, updated_at) 
-    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-    ON CONFLICT(key) DO UPDATE SET value = excluded.value, description = excluded.description, updated_at = CURRENT_TIMESTAMP
-  `);
-
   for (const s of settingsData) {
-    upsertSetting.run(s.key, s.value, s.description);
+    await db.execute(`
+      INSERT INTO settings (key, value, description, updated_at) 
+      VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, description = excluded.description, updated_at = CURRENT_TIMESTAMP
+    `, [s.key, s.value, s.description]);
   }
 
   // 2. Zones de livraison
@@ -41,11 +39,11 @@ export async function seedDatabase() {
     { name: 'Retrait Gratuit en Boutique (Dakar)', price: 0, estimated_days: 'Disponible en 2h après confirmation' }
   ];
 
-  const existingZones = db.queryAll('SELECT COUNT(*) as count FROM delivery_zones');
-  if (existingZones[0].count === 0) {
-    const insertZone = db.getRawDb().prepare('INSERT INTO delivery_zones (name, price, estimated_days) VALUES (?, ?, ?)');
+  const existingZones = await db.queryAll('SELECT COUNT(*) as count FROM delivery_zones');
+  const countZones = existingZones && existingZones[0] ? Number(existingZones[0].count) : 0;
+  if (countZones === 0) {
     for (const z of zonesData) {
-      insertZone.run(z.name, z.price, z.estimated_days);
+      await db.execute('INSERT INTO delivery_zones (name, price, estimated_days) VALUES (?, ?, ?)', [z.name, z.price, z.estimated_days]);
     }
   }
 
@@ -53,15 +51,19 @@ export async function seedDatabase() {
   const adminSalmaPasswordHash = await bcrypt.hash('AdminSalma2026!', 10);
   const clientSalmaPasswordHash = await bcrypt.hash('ClientSalma123!', 10);
 
-  const upsertUser = db.getRawDb().prepare(`
-    INSERT INTO users (first_name, last_name, email, phone, password_hash, role, address, city, region)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(email) DO UPDATE SET password_hash = excluded.password_hash, role = excluded.role, phone = excluded.phone
-  `);
+  const usersToInsert = [
+    { fn: 'Salma', ln: 'Propriétaire', em: 'admin@salmashop.sn', ph: '+221 77 201 86 97', pw: adminSalmaPasswordHash, role: 'admin', ad: 'Dakar' },
+    { fn: 'Fatou', ln: 'Diop', em: 'client@salmashop.sn', ph: '+221 78 987 65 43', pw: clientSalmaPasswordHash, role: 'client', ad: 'Almadies' },
+    { fn: 'Salma', ln: 'Admin', em: 'admin@terangashop.sn', ph: '+221 77 201 86 97', pw: adminSalmaPasswordHash, role: 'admin', ad: 'Dakar' }
+  ];
 
-  upsertUser.run('Salma', 'Propriétaire', 'admin@salmashop.sn', '+221 77 201 86 97', adminSalmaPasswordHash, 'admin', 'Dakar', 'Dakar', 'Dakar');
-  upsertUser.run('Fatou', 'Diop', 'client@salmashop.sn', '+221 78 987 65 43', clientSalmaPasswordHash, 'client', 'Almadies', 'Dakar', 'Dakar');
-  upsertUser.run('Salma', 'Admin', 'admin@terangashop.sn', '+221 77 201 86 97', adminSalmaPasswordHash, 'admin', 'Dakar', 'Dakar', 'Dakar');
+  for (const u of usersToInsert) {
+    await db.execute(`
+      INSERT INTO users (first_name, last_name, email, phone, password_hash, role, address, city, region)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'Dakar', 'Dakar')
+      ON CONFLICT(email) DO UPDATE SET password_hash = excluded.password_hash, role = excluded.role, phone = excluded.phone
+    `, [u.fn, u.ln, u.em, u.ph, u.pw, u.role, u.ad]);
+  }
 
   // 4. Catégories Complètes Demandées par l'Utilisatrice (Dessins d'articles façon Carrefour)
   const categoriesData = [
@@ -138,20 +140,18 @@ export async function seedDatabase() {
   ];
 
   // Réinitialiser les catégories et produits pour garantir la cohérence
-  db.execute('DELETE FROM product_images');
-  db.execute('DELETE FROM order_items');
-  db.execute('DELETE FROM reviews');
-  db.execute('DELETE FROM products');
-  db.execute('DELETE FROM categories');
-
-  const insertCat = db.getRawDb().prepare(`
-    INSERT INTO categories (name, slug, description, image_url, display_order)
-    VALUES (?, ?, ?, ?, ?)
-  `);
+  await db.execute('DELETE FROM product_images');
+  await db.execute('DELETE FROM order_items');
+  await db.execute('DELETE FROM reviews');
+  await db.execute('DELETE FROM products');
+  await db.execute('DELETE FROM categories');
 
   const categoryMap = {};
   for (const c of categoriesData) {
-    const res = insertCat.run(c.name, c.slug, c.description, c.image_url, c.display_order);
+    const res = await db.execute(`
+      INSERT INTO categories (name, slug, description, image_url, display_order)
+      VALUES (?, ?, ?, ?, ?)
+    `, [c.name, c.slug, c.description, c.image_url, c.display_order]);
     categoryMap[c.slug] = res.lastInsertRowid;
   }
 
@@ -431,18 +431,14 @@ export async function seedDatabase() {
     }
   ];
 
-  const insertProd = db.getRawDb().prepare(`
-    INSERT INTO products (category_id, name, slug, short_description, description, price, compare_price, stock, low_stock_threshold, sku, is_featured, is_promo, specifications)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  const insertImg = db.getRawDb().prepare(`
-    INSERT INTO product_images (product_id, image_url, is_primary, display_order)
-    VALUES (?, ?, ?, ?)
-  `);
-
   for (const p of productsData) {
-    const info = insertProd.run(
+    const info = await db.execute(`
+      INSERT INTO products (
+        category_id, name, slug, short_description, description,
+        price, compare_price, stock, low_stock_threshold, sku,
+        is_featured, is_promo, specifications
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
       p.category_id,
       p.name,
       p.slug,
@@ -456,21 +452,20 @@ export async function seedDatabase() {
       p.is_featured,
       p.is_promo,
       p.specifications
-    );
+    ]);
     const prodId = info.lastInsertRowid;
 
-    p.images.forEach((img, idx) => {
-      insertImg.run(prodId, img.url, img.is_primary, idx);
-    });
+    for (let idx = 0; idx < p.images.length; idx++) {
+      const img = p.images[idx];
+      await db.execute(`
+        INSERT INTO product_images (product_id, image_url, is_primary, display_order)
+        VALUES (?, ?, ?, ?)
+      `, [prodId, img.url, img.is_primary, idx]);
+    }
   }
 
   // 6. Avis clients par défaut
-  const insertReview = db.getRawDb().prepare(`
-    INSERT INTO reviews (product_id, user_name, rating, comment, status)
-    VALUES (?, ?, ?, ?, 'approved')
-  `);
-
-  const sampleProducts = db.queryAll('SELECT id FROM products LIMIT 5');
+  const sampleProducts = await db.queryAll('SELECT id FROM products LIMIT 5');
   const reviewComments = [
     { name: 'Awa Diallo', rating: 5, comment: 'Très satisfaite de ma commande reçue à Dakar en moins de 24h ! Qualité au top et prix très abordable.' },
     { name: 'Mame Diarra', rating: 5, comment: 'Le service client sur WhatsApp est super réactif. L’article correspond exactement à la photo.' },
@@ -479,7 +474,10 @@ export async function seedDatabase() {
 
   for (const p of sampleProducts) {
     for (const r of reviewComments) {
-      insertReview.run(p.id, r.name, r.rating, r.comment);
+      await db.execute(`
+        INSERT INTO reviews (product_id, user_name, rating, comment, status)
+        VALUES (?, ?, ?, ?, 'approved')
+      `, [p.id, r.name, r.rating, r.comment]);
     }
   }
 

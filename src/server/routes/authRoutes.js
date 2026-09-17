@@ -34,7 +34,7 @@ router.post('/register', async (req, res, next) => {
       });
     }
 
-    const existing = db.queryOne('SELECT id FROM users WHERE email = ?', [email.trim().toLowerCase()]);
+    const existing = await db.queryOne('SELECT id FROM users WHERE email = ?', [email.trim().toLowerCase()]);
     if (existing) {
       return res.status(409).json({
         success: false,
@@ -43,7 +43,7 @@ router.post('/register', async (req, res, next) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const result = db.execute(`
+    const result = await db.execute(`
       INSERT INTO users (first_name, last_name, email, phone, password_hash, role, address, city, region)
       VALUES (?, ?, ?, ?, ?, 'client', ?, ?, ?)
     `, [
@@ -57,7 +57,7 @@ router.post('/register', async (req, res, next) => {
       region || 'Dakar'
     ]);
 
-    const newUser = db.queryOne(
+    const newUser = await db.queryOne(
       'SELECT id, first_name, last_name, email, phone, role, address, city, region, created_at FROM users WHERE id = ?',
       [result.lastInsertRowid]
     );
@@ -87,7 +87,7 @@ router.post('/login', async (req, res, next) => {
       });
     }
 
-    const user = db.queryOne('SELECT * FROM users WHERE email = ?', [email.trim().toLowerCase()]);
+    const user = await db.queryOne('SELECT * FROM users WHERE email = ?', [email.trim().toLowerCase()]);
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -137,11 +137,11 @@ router.get('/me', authenticate, (req, res) => {
 });
 
 // Mettre à jour les informations du profil
-router.put('/profile', authenticate, (req, res, next) => {
+router.put('/profile', authenticate, async (req, res, next) => {
   try {
     const { first_name, last_name, phone, address, city, region } = req.body;
 
-    db.execute(`
+    await db.execute(`
       UPDATE users
       SET first_name = COALESCE(?, first_name),
           last_name = COALESCE(?, last_name),
@@ -153,7 +153,7 @@ router.put('/profile', authenticate, (req, res, next) => {
       WHERE id = ?
     `, [first_name, last_name, phone, address, city, region, req.user.id]);
 
-    const updatedUser = db.queryOne(
+    const updatedUser = await db.queryOne(
       'SELECT id, first_name, last_name, email, phone, role, address, city, region FROM users WHERE id = ?',
       [req.user.id]
     );
@@ -187,7 +187,7 @@ router.put('/password', authenticate, async (req, res, next) => {
       });
     }
 
-    const user = db.queryOne('SELECT password_hash FROM users WHERE id = ?', [req.user.id]);
+    const user = await db.queryOne('SELECT password_hash FROM users WHERE id = ?', [req.user.id]);
     const isMatch = await bcrypt.compare(current_password, user.password_hash);
     if (!isMatch) {
       return res.status(400).json({
@@ -197,7 +197,7 @@ router.put('/password', authenticate, async (req, res, next) => {
     }
 
     const newHash = await bcrypt.hash(new_password, 10);
-    db.execute('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [newHash, req.user.id]);
+    await db.execute('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [newHash, req.user.id]);
 
     res.json({
       success: true,

@@ -4,9 +4,9 @@ import { db } from '../db/connection.js';
 const router = express.Router();
 
 // Récupérer toutes les catégories actives avec le nombre de produits
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
-    const categories = db.queryAll(`
+    const categories = await db.queryAll(`
       SELECT c.*, COUNT(p.id) as product_count
       FROM categories c
       LEFT JOIN products p ON p.category_id = c.id AND p.is_active = 1
@@ -25,9 +25,9 @@ router.get('/', (req, res, next) => {
 });
 
 // Récupérer une catégorie par son slug
-router.get('/:slug', (req, res, next) => {
+router.get('/:slug', async (req, res, next) => {
   try {
-    const category = db.queryOne(`
+    const category = await db.queryOne(`
       SELECT * FROM categories WHERE slug = ? AND is_active = 1
     `, [req.params.slug]);
 
@@ -38,7 +38,7 @@ router.get('/:slug', (req, res, next) => {
       });
     }
 
-    const products = db.queryAll(`
+    const products = await db.queryAll(`
       SELECT p.*, 
              COALESCE(
                (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),

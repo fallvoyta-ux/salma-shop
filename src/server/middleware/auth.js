@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
 import { db } from '../db/connection.js';
 
-export function authenticate(req, res, next) {
+export async function authenticate(req, res, next) {
   let token = null;
 
   // Récupération depuis le header Authorization: Bearer <token>
@@ -29,7 +29,7 @@ export function authenticate(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, config.jwtSecret);
-    const user = db.queryOne('SELECT id, first_name, last_name, email, phone, role, address, city, region FROM users WHERE id = ?', [decoded.id]);
+    const user = await db.queryOne('SELECT id, first_name, last_name, email, phone, role, address, city, region FROM users WHERE id = ?', [decoded.id]);
 
     if (!user) {
       return res.status(401).json({
@@ -49,7 +49,7 @@ export function authenticate(req, res, next) {
 }
 
 // Middleware optionnel (permet d'attacher l'utilisateur si connecté sans bloquer si invité)
-export function optionalAuthenticate(req, res, next) {
+export async function optionalAuthenticate(req, res, next) {
   let token = null;
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -59,7 +59,7 @@ export function optionalAuthenticate(req, res, next) {
   if (token) {
     try {
       const decoded = jwt.verify(token, config.jwtSecret);
-      const user = db.queryOne('SELECT id, first_name, last_name, email, phone, role, address, city, region FROM users WHERE id = ?', [decoded.id]);
+      const user = await db.queryOne('SELECT id, first_name, last_name, email, phone, role, address, city, region FROM users WHERE id = ?', [decoded.id]);
       if (user) {
         req.user = user;
       }

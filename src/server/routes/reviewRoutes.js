@@ -5,9 +5,9 @@ import { optionalAuthenticate } from '../middleware/auth.js';
 const router = express.Router();
 
 // Récupérer les avis approuvés d'un produit
-router.get('/product/:productId', (req, res, next) => {
+router.get('/product/:productId', async (req, res, next) => {
   try {
-    const reviews = db.queryAll(`
+    const reviews = await db.queryAll(`
       SELECT r.id, r.user_name, r.rating, r.comment, r.created_at
       FROM reviews r
       WHERE r.product_id = ? AND r.status = 'approved'
@@ -24,7 +24,7 @@ router.get('/product/:productId', (req, res, next) => {
 });
 
 // Ajouter un avis client (avec modération par défaut ou approbation immédiate)
-router.post('/product/:productId', optionalAuthenticate, (req, res, next) => {
+router.post('/product/:productId', optionalAuthenticate, async (req, res, next) => {
   try {
     const { user_name, rating, comment } = req.body;
     const productId = req.params.productId;
@@ -44,7 +44,7 @@ router.post('/product/:productId', optionalAuthenticate, (req, res, next) => {
       });
     }
 
-    const product = db.queryOne('SELECT id FROM products WHERE id = ?', [productId]);
+    const product = await db.queryOne('SELECT id FROM products WHERE id = ?', [productId]);
     if (!product) {
       return res.status(404).json({
         success: false,
@@ -57,7 +57,7 @@ router.post('/product/:productId', optionalAuthenticate, (req, res, next) => {
 
     // Pour une boutique en production, on peut approuver directement ou mettre en pending.
     // Mettons 'approved' pour une expérience immédiate satisfaisante, avec modération possible dans /admin
-    const result = db.execute(`
+    const result = await db.execute(`
       INSERT INTO reviews (product_id, user_id, user_name, rating, comment, status)
       VALUES (?, ?, ?, ?, ?, 'approved')
     `, [productId, userId, authorName, parsedRating, comment.trim()]);

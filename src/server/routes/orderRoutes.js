@@ -48,7 +48,7 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
     let deliveryFee = 2000; // Par défaut si non spécifié
     let zoneName = 'Livraison standard Dakar';
     if (delivery_zone_id) {
-      const zone = db.queryOne('SELECT * FROM delivery_zones WHERE id = ?', [delivery_zone_id]);
+      const zone = await db.queryOne('SELECT * FROM delivery_zones WHERE id = ?', [delivery_zone_id]);
       if (zone) {
         deliveryFee = zone.price;
         zoneName = zone.name;
@@ -56,14 +56,14 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
     }
 
     // Récupération du seuil de gratuité de livraison depuis les paramètres
-    const freeShippingSetting = db.queryOne("SELECT value FROM settings WHERE key = 'free_shipping_threshold'");
+    const freeShippingSetting = await db.queryOne("SELECT value FROM settings WHERE key = 'free_shipping_threshold'");
     const freeShippingThreshold = freeShippingSetting ? parseInt(freeShippingSetting.value, 10) : 50000;
 
     let createdOrder = null;
     let orderItemsData = [];
 
     // Transaction DB : vérification des stocks et insertion
-    db.transaction(() => {
+    await db.transaction(async () => {
       let calculatedSubtotal = 0;
       const verifiedItems = [];
 
@@ -73,7 +73,7 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
 
         if (qty <= 0) continue;
 
-        const product = db.queryOne('SELECT * FROM products WHERE id = ?', [prodId]);
+        const product = await db.queryOne('SELECT * FROM products WHERE id = ?', [prodId]);
         if (!product) {
           throw new Error(`Le produit sélectionné (ID #${prodId}) n'est plus disponible.`);
         }
@@ -90,7 +90,7 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
         calculatedSubtotal += itemSubtotal;
 
         // Récupérer l'image principale
-        const primaryImg = db.queryOne(`
+        const primaryImg = await db.queryOne(`
           SELECT image_url FROM product_images WHERE product_id = ? AND is_primary = 1 LIMIT 1
         `, [product.id]);
 
@@ -117,14 +117,14 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
       const totalAmount = calculatedSubtotal + finalDeliveryFee;
 
       // Génération du numéro unique de commande
-      const countRes = db.queryOne('SELECT COUNT(*) as total FROM orders');
-      const nextSeq = (countRes ? countRes.total : 0) + 1;
+      const countRes = await db.queryOne('SELECT COUNT(*) as total FROM orders');
+      const nextSeq = (countRes ? Number(countRes.total) : 0) + 1;
       const orderNumber = `CMD-2026-${String(nextSeq).padStart(6, '0')}`;
 
       const userId = req.user ? req.user.id : null;
 
       // Insertion de la commande
-      const orderRes = db.execute(`
+      const orderRes = await db.execute(`
         INSERT INTO orders (
           order_number, user_id, customer_name, customer_email, customer_phone,
           delivery_region, delivery_city, delivery_address, delivery_notes,
@@ -151,22 +151,19 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
 
       const orderId = orderRes.lastInsertRowid;
 
-      // Insertion des articles et décrémentation des stocks
-      const insertItemStmt = db.getRawDb().prepare(`
-        INSERT INTO order_items (order_id, product_id, product_name, product_image, unit_price, quantity, subtotal)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `);
-
-      const decrementStockStmt = db.getRawDb().prepare(`
-        UPDATE products SET stock = stock - ? WHERE id = ?
-      `);
-
+      // Insertion des articles et décrémentation des stocks (compatible PostgreSQL & SQLite)
       for (const it of verifiedItems) {
-        insertItemStmt.run(orderId, it.product_id, it.name, it.image, it.price, it.quantity, it.subtotal);
-        decrementStockStmt.run(it.quantity, it.product_id);
+        await db.execute(`
+          INSERT INTO order_items (order_id, product_id, product_name, product_image, unit_price, quantity, subtotal)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [orderId, it.product_id, it.name, it.image, it.price, it.quantity, it.subtotal]);
+
+        await db.execute(`
+          UPDATE products SET stock = stock - ? WHERE id = ?
+        `, [it.quantity, it.product_id]);
       }
 
-      createdOrder = db.queryOne('SELECT * FROM orders WHERE id = ?', [orderId]);
+      createdOrder = await db.queryOne('SELECT * FROM orders WHERE id = ?', [orderId]);
       orderItemsData = verifiedItems;
     });
 
@@ -190,9 +187,9 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
 });
 
 // Suivi public d'une commande par son numéro
-router.get('/track/:orderNumber', (req, res, next) => {
+router.get('/track/:orderNumber', async (req, res, next) => {
   try {
-    const order = db.queryOne(`
+    const order = await db.queryOne(`
       SELECT o.id, o.order_number, o.customer_name, o.delivery_city, o.delivery_address,
              o.total_amount, o.delivery_fee, o.order_status, o.payment_method, o.payment_status,
              o.created_at, z.name as zone_name
@@ -208,7 +205,7 @@ router.get('/track/:orderNumber', (req, res, next) => {
       });
     }
 
-    const items = db.queryAll(`
+    const items = await db.queryAll(`
       SELECT id, product_name, product_image, unit_price, quantity, subtotal
       FROM order_items
       WHERE order_id = ?
@@ -225,9 +222,9 @@ router.get('/track/:orderNumber', (req, res, next) => {
 });
 
 // Historique des commandes du client connecté
-router.get('/my-orders', authenticate, (req, res, next) => {
+router.get('/my-orders', authenticate, async (req, res, next) => {
   try {
-    const orders = db.queryAll(`
+    const orders = await db.queryAll(`
       SELECT o.*, 
              (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as items_count
       FROM orders o
@@ -245,9 +242,9 @@ router.get('/my-orders', authenticate, (req, res, next) => {
 });
 
 // Détail d'une commande par ID
-router.get('/:id', optionalAuthenticate, (req, res, next) => {
+router.get('/:id', optionalAuthenticate, async (req, res, next) => {
   try {
-    const order = db.queryOne(`
+    const order = await db.queryOne(`
       SELECT o.*, z.name as zone_name
       FROM orders o
       LEFT JOIN delivery_zones z ON z.id = o.delivery_zone_id
@@ -269,11 +266,11 @@ router.get('/:id', optionalAuthenticate, (req, res, next) => {
       });
     }
 
-    const items = db.queryAll(`
+    const items = await db.queryAll(`
       SELECT * FROM order_items WHERE order_id = ?
     `, [order.id]);
 
-    const payments = db.queryAll(`
+    const payments = await db.queryAll(`
       SELECT id, provider, transaction_id, amount, currency, status, created_at
       FROM payments WHERE order_id = ?
     `, [order.id]);

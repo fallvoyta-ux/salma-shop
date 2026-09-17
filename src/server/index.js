@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import rateLimit from 'express-rate-limit';
 
 import { config } from './config.js';
-import { db } from './db/connection.js';
+import { db, initSchema } from './db/connection.js';
 import { seedDatabase } from './db/seed.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -105,8 +105,11 @@ app.listen(config.port, '0.0.0.0', async () => {
   console.log(`======================================================\n`);
 
   try {
+    // Initialiser le schéma de tables si nécessaire (PostgreSQL ou SQLite)
+    await initSchema();
+
     // Vérifier si la base de données contient des produits, sinon lancer le seed
-    const count = db.queryOne('SELECT COUNT(*) as count FROM products');
+    const count = await db.queryOne('SELECT COUNT(*) as count FROM products');
     if (!count || count.count === 0) {
       console.log('📦 Base de données vide détectée. Lancement automatique du seed initial...');
       await seedDatabase();

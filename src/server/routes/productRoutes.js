@@ -4,9 +4,9 @@ import { db } from '../db/connection.js';
 const router = express.Router();
 
 // Récupérer les produits en vedette (Homepage)
-router.get('/featured', (req, res, next) => {
+router.get('/featured', async (req, res, next) => {
   try {
-    const products = db.queryAll(`
+    const products = await db.queryAll(`
       SELECT p.*, c.name as category_name, c.slug as category_slug,
              COALESCE(
                (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
@@ -26,9 +26,9 @@ router.get('/featured', (req, res, next) => {
 });
 
 // Récupérer les nouveautés
-router.get('/new-arrivals', (req, res, next) => {
+router.get('/new-arrivals', async (req, res, next) => {
   try {
-    const products = db.queryAll(`
+    const products = await db.queryAll(`
       SELECT p.*, c.name as category_name, c.slug as category_slug,
              COALESCE(
                (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
@@ -48,9 +48,9 @@ router.get('/new-arrivals', (req, res, next) => {
 });
 
 // Récupérer les promotions
-router.get('/promotions', (req, res, next) => {
+router.get('/promotions', async (req, res, next) => {
   try {
-    const products = db.queryAll(`
+    const products = await db.queryAll(`
       SELECT p.*, c.name as category_name, c.slug as category_slug,
              COALESCE(
                (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
@@ -70,7 +70,7 @@ router.get('/promotions', (req, res, next) => {
 });
 
 // Catalogue complet avec filtres, recherche, tri et pagination
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
     const {
       search,
@@ -152,7 +152,7 @@ router.get('/', (req, res, next) => {
       LEFT JOIN categories c ON c.id = p.category_id
       ${whereClause}
     `;
-    const countRow = db.queryOne(countQuery, params);
+    const countRow = await db.queryOne(countQuery, params);
     const total = countRow ? countRow.total : 0;
     const totalPages = Math.ceil(total / parsedLimit);
 
@@ -160,8 +160,8 @@ router.get('/', (req, res, next) => {
     const selectQuery = `
       SELECT p.*, c.name as category_name, c.slug as category_slug,
              COALESCE(
-               (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
-               (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1)
+                (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
+                (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1)
              ) as primary_image
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
@@ -170,7 +170,7 @@ router.get('/', (req, res, next) => {
       LIMIT ? OFFSET ?
     `;
 
-    const products = db.queryAll(selectQuery, [...params, parsedLimit, offset]);
+    const products = await db.queryAll(selectQuery, [...params, parsedLimit, offset]);
 
     res.json({
       success: true,
@@ -188,9 +188,9 @@ router.get('/', (req, res, next) => {
 });
 
 // Détail d'un produit par son slug
-router.get('/:slug', (req, res, next) => {
+router.get('/:slug', async (req, res, next) => {
   try {
-    const product = db.queryOne(`
+    const product = await db.queryOne(`
       SELECT p.*, c.name as category_name, c.slug as category_slug
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
@@ -205,7 +205,7 @@ router.get('/:slug', (req, res, next) => {
     }
 
     // Récupérer toutes les photos de la galerie
-    const images = db.queryAll(`
+    const images = await db.queryAll(`
       SELECT id, image_url, is_primary, display_order
       FROM product_images
       WHERE product_id = ?
@@ -213,14 +213,14 @@ router.get('/:slug', (req, res, next) => {
     `, [product.id]);
 
     // Récupérer les avis approuvés et la note moyenne
-    const reviews = db.queryAll(`
+    const reviews = await db.queryAll(`
       SELECT id, user_name, rating, comment, created_at
       FROM reviews
       WHERE product_id = ? AND status = 'approved'
       ORDER BY created_at DESC
     `, [product.id]);
 
-    const reviewStats = db.queryOne(`
+    const reviewStats = await db.queryOne(`
       SELECT COUNT(*) as review_count, AVG(rating) as average_rating
       FROM reviews
       WHERE product_id = ? AND status = 'approved'
@@ -253,9 +253,9 @@ router.get('/:slug', (req, res, next) => {
 });
 
 // Produits similaires (même catégorie)
-router.get('/:slug/related', (req, res, next) => {
+router.get('/:slug/related', async (req, res, next) => {
   try {
-    const product = db.queryOne(`
+    const product = await db.queryOne(`
       SELECT id, category_id FROM products WHERE slug = ? OR id = ?
     `, [req.params.slug, req.params.slug]);
 
@@ -263,11 +263,11 @@ router.get('/:slug/related', (req, res, next) => {
       return res.json({ success: true, products: [] });
     }
 
-    const related = db.queryAll(`
+    const related = await db.queryAll(`
       SELECT p.*, c.name as category_name, c.slug as category_slug,
              COALESCE(
-               (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
-               (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1)
+                (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
+                (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1)
              ) as primary_image
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id

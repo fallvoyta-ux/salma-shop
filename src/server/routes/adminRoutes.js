@@ -12,28 +12,28 @@ router.use(authenticate, requireAdmin);
 // ==========================================
 // 1. STATISTIQUES & TABLEAU DE BORD
 // ==========================================
-router.get('/stats', (req, res, next) => {
+router.get('/stats', async (req, res, next) => {
   try {
     // Chiffre d'affaires
-    const totalRevRow = db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid'");
-    const todayRevRow = db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND DATE(created_at) = DATE('now')");
-    const weekRevRow = db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND created_at >= DATE('now', '-7 days')");
-    const monthRevRow = db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND created_at >= DATE('now', 'start of month')");
+    const totalRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid'");
+    const todayRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND DATE(created_at) = DATE('now')");
+    const weekRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND created_at >= DATE('now', '-7 days')");
+    const monthRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND created_at >= DATE('now', 'start of month')");
 
     // Commandes
-    const totalOrdersRow = db.queryOne('SELECT COUNT(*) as total FROM orders');
-    const pendingOrdersRow = db.queryOne("SELECT COUNT(*) as total FROM orders WHERE order_status = 'pending'");
-    const deliveredOrdersRow = db.queryOne("SELECT COUNT(*) as total FROM orders WHERE order_status = 'delivered'");
+    const totalOrdersRow = await db.queryOne('SELECT COUNT(*) as total FROM orders');
+    const pendingOrdersRow = await db.queryOne("SELECT COUNT(*) as total FROM orders WHERE order_status = 'pending'");
+    const deliveredOrdersRow = await db.queryOne("SELECT COUNT(*) as total FROM orders WHERE order_status = 'delivered'");
 
     // Clients & Produits
-    const totalCustomersRow = db.queryOne("SELECT COUNT(*) as total FROM users WHERE role = 'client'");
-    const totalProductsRow = db.queryOne('SELECT COUNT(*) as total FROM products');
+    const totalCustomersRow = await db.queryOne("SELECT COUNT(*) as total FROM users WHERE role = 'client'");
+    const totalProductsRow = await db.queryOne('SELECT COUNT(*) as total FROM products');
 
     // Panier moyen
-    const avgOrderRow = db.queryOne("SELECT COALESCE(AVG(total_amount), 0) as avg FROM orders WHERE payment_status = 'paid'");
+    const avgOrderRow = await db.queryOne("SELECT COALESCE(AVG(total_amount), 0) as avg FROM orders WHERE payment_status = 'paid'");
 
     // Produits en alerte de stock faible
-    const lowStockProducts = db.queryAll(`
+    const lowStockProducts = await db.queryAll(`
       SELECT id, name, sku, stock, low_stock_threshold, price
       FROM products
       WHERE stock <= low_stock_threshold
@@ -42,7 +42,7 @@ router.get('/stats', (req, res, next) => {
     `);
 
     // Ventes des 7 derniers jours (pour le graphique)
-    const salesChart = db.queryAll(`
+    const salesChart = await db.queryAll(`
       SELECT DATE(created_at) as date,
              COUNT(*) as order_count,
              COALESCE(SUM(total_amount), 0) as total_sales
@@ -53,7 +53,7 @@ router.get('/stats', (req, res, next) => {
     `);
 
     // Dernières commandes
-    const recentOrders = db.queryAll(`
+    const recentOrders = await db.queryAll(`
       SELECT o.id, o.order_number, o.customer_name, o.customer_phone, o.total_amount,
              o.order_status, o.payment_status, o.created_at
       FROM orders o
@@ -62,7 +62,7 @@ router.get('/stats', (req, res, next) => {
     `);
 
     // Meilleurs produits vendus
-    const topProducts = db.queryAll(`
+    const topProducts = await db.queryAll(`
       SELECT oi.product_id, oi.product_name, 
              SUM(oi.quantity) as total_sold,
              SUM(oi.subtotal) as total_revenue
@@ -102,9 +102,9 @@ router.get('/stats', (req, res, next) => {
 // ==========================================
 // 2. GESTION DES PRODUITS
 // ==========================================
-router.get('/products', (req, res, next) => {
+router.get('/products', async (req, res, next) => {
   try {
-    const products = db.queryAll(`
+    const products = await db.queryAll(`
       SELECT p.*, c.name as category_name,
              COALESCE(
                (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
@@ -123,7 +123,7 @@ router.get('/products', (req, res, next) => {
 });
 
 // Créer un produit avec images uploadées ou URLs
-router.post('/products', upload.array('images', 6), (req, res, next) => {
+router.post('/products', upload.array('images', 6), async (req, res, next) => {
   try {
     const {
       name,
@@ -152,7 +152,7 @@ router.post('/products', upload.array('images', 6), (req, res, next) => {
     let baseSlug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     let slug = baseSlug;
     let counter = 1;
-    while (db.queryOne('SELECT id FROM products WHERE slug = ?', [slug])) {
+    while (await db.queryOne('SELECT id FROM products WHERE slug = ?', [slug])) {
       slug = `${baseSlug}-${counter}`;
       counter++;
     }
@@ -160,7 +160,7 @@ router.post('/products', upload.array('images', 6), (req, res, next) => {
     // Génération du SKU si non fourni
     const finalSku = sku ? sku.trim().toUpperCase() : `TRG-${Date.now().toString().slice(-6)}`;
 
-    const result = db.execute(`
+    const result = await db.execute(`
       INSERT INTO products (
         category_id, name, slug, description, short_description,
         price, compare_price, stock, low_stock_threshold, sku,
@@ -185,16 +185,14 @@ router.post('/products', upload.array('images', 6), (req, res, next) => {
     const productId = result.lastInsertRowid;
 
     // Traitement des images uploadées
-    const insertImg = db.getRawDb().prepare(`
-      INSERT INTO product_images (product_id, image_url, is_primary, display_order)
-      VALUES (?, ?, ?, ?)
-    `);
-
     let imageIndex = 0;
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         const imageUrl = `/uploads/${file.filename}`;
-        insertImg.run(productId, imageUrl, imageIndex === 0 ? 1 : 0, imageIndex);
+        await db.execute(`
+          INSERT INTO product_images (product_id, image_url, is_primary, display_order)
+          VALUES (?, ?, ?, ?)
+        `, [productId, imageUrl, imageIndex === 0 ? 1 : 0, imageIndex]);
         imageIndex++;
       }
     }
@@ -204,13 +202,16 @@ router.post('/products', upload.array('images', 6), (req, res, next) => {
       const urls = Array.isArray(image_urls) ? image_urls : [image_urls];
       for (const url of urls) {
         if (url && typeof url === 'string' && url.trim()) {
-          insertImg.run(productId, url.trim(), imageIndex === 0 ? 1 : 0, imageIndex);
+          await db.execute(`
+            INSERT INTO product_images (product_id, image_url, is_primary, display_order)
+            VALUES (?, ?, ?, ?)
+          `, [productId, url.trim(), imageIndex === 0 ? 1 : 0, imageIndex]);
           imageIndex++;
         }
       }
     }
 
-    const createdProduct = db.queryOne('SELECT * FROM products WHERE id = ?', [productId]);
+    const createdProduct = await db.queryOne('SELECT * FROM products WHERE id = ?', [productId]);
 
     res.status(201).json({
       success: true,
@@ -223,7 +224,7 @@ router.post('/products', upload.array('images', 6), (req, res, next) => {
 });
 
 // Modifier un produit
-router.put('/products/:id', (req, res, next) => {
+router.put('/products/:id', async (req, res, next) => {
   try {
     const {
       name,
@@ -242,12 +243,12 @@ router.put('/products/:id', (req, res, next) => {
     } = req.body;
 
     const productId = req.params.id;
-    const existing = db.queryOne('SELECT id FROM products WHERE id = ?', [productId]);
+    const existing = await db.queryOne('SELECT id FROM products WHERE id = ?', [productId]);
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Produit introuvable.' });
     }
 
-    db.execute(`
+    await db.execute(`
       UPDATE products
       SET name = COALESCE(?, name),
           category_id = ?,
@@ -281,7 +282,7 @@ router.put('/products/:id', (req, res, next) => {
       productId
     ]);
 
-    const updated = db.queryOne('SELECT * FROM products WHERE id = ?', [productId]);
+    const updated = await db.queryOne('SELECT * FROM products WHERE id = ?', [productId]);
     res.json({ success: true, message: 'Produit mis à jour.', product: updated });
   } catch (err) {
     next(err);
@@ -289,10 +290,10 @@ router.put('/products/:id', (req, res, next) => {
 });
 
 // Supprimer un produit
-router.delete('/products/:id', (req, res, next) => {
+router.delete('/products/:id', async (req, res, next) => {
   try {
     const productId = req.params.id;
-    db.execute('DELETE FROM products WHERE id = ?', [productId]);
+    await db.execute('DELETE FROM products WHERE id = ?', [productId]);
     res.json({ success: true, message: 'Produit supprimé avec succès.' });
   } catch (err) {
     next(err);
@@ -300,15 +301,15 @@ router.delete('/products/:id', (req, res, next) => {
 });
 
 // Activer / Désactiver rapidement un produit
-router.patch('/products/:id/toggle-status', (req, res, next) => {
+router.patch('/products/:id/toggle-status', async (req, res, next) => {
   try {
-    const product = db.queryOne('SELECT id, is_active FROM products WHERE id = ?', [req.params.id]);
+    const product = await db.queryOne('SELECT id, is_active FROM products WHERE id = ?', [req.params.id]);
     if (!product) {
       return res.status(404).json({ success: false, message: 'Produit introuvable.' });
     }
 
     const newStatus = product.is_active === 1 ? 0 : 1;
-    db.execute('UPDATE products SET is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [newStatus, req.params.id]);
+    await db.execute('UPDATE products SET is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [newStatus, req.params.id]);
 
     res.json({ success: true, is_active: newStatus });
   } catch (err) {
@@ -317,14 +318,14 @@ router.patch('/products/:id/toggle-status', (req, res, next) => {
 });
 
 // Ajuster le stock d'un produit
-router.patch('/products/:id/stock', (req, res, next) => {
+router.patch('/products/:id/stock', async (req, res, next) => {
   try {
     const { stock } = req.body;
     if (stock === undefined || isNaN(stock) || stock < 0) {
       return res.status(400).json({ success: false, message: 'Quantité de stock invalide.' });
     }
 
-    db.execute('UPDATE products SET stock = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [parseInt(stock, 10), req.params.id]);
+    await db.execute('UPDATE products SET stock = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [parseInt(stock, 10), req.params.id]);
     res.json({ success: true, message: 'Stock mis à jour.' });
   } catch (err) {
     next(err);
@@ -332,26 +333,24 @@ router.patch('/products/:id/stock', (req, res, next) => {
 });
 
 // Téléverser des images pour un produit
-router.post('/products/:id/images', upload.array('images', 6), (req, res, next) => {
+router.post('/products/:id/images', upload.array('images', 6), async (req, res, next) => {
   try {
     const productId = req.params.id;
     const files = req.files || [];
 
-    const existingCount = db.queryOne('SELECT COUNT(*) as count FROM product_images WHERE product_id = ?', [productId]);
+    const existingCount = await db.queryOne('SELECT COUNT(*) as count FROM product_images WHERE product_id = ?', [productId]);
     let orderIndex = existingCount ? existingCount.count : 0;
-
-    const insertImg = db.getRawDb().prepare(`
-      INSERT INTO product_images (product_id, image_url, is_primary, display_order)
-      VALUES (?, ?, ?, ?)
-    `);
 
     for (const file of files) {
       const url = `/uploads/${file.filename}`;
-      insertImg.run(productId, url, orderIndex === 0 ? 1 : 0, orderIndex);
+      await db.execute(`
+        INSERT INTO product_images (product_id, image_url, is_primary, display_order)
+        VALUES (?, ?, ?, ?)
+      `, [productId, url, orderIndex === 0 ? 1 : 0, orderIndex]);
       orderIndex++;
     }
 
-    const images = db.queryAll('SELECT * FROM product_images WHERE product_id = ? ORDER BY is_primary DESC, display_order ASC', [productId]);
+    const images = await db.queryAll('SELECT * FROM product_images WHERE product_id = ? ORDER BY is_primary DESC, display_order ASC', [productId]);
     res.json({ success: true, message: 'Images ajoutées.', images });
   } catch (err) {
     next(err);
@@ -359,16 +358,16 @@ router.post('/products/:id/images', upload.array('images', 6), (req, res, next) 
 });
 
 // Définir une image comme principale
-router.patch('/products/images/:imageId/set-primary', (req, res, next) => {
+router.patch('/products/images/:imageId/set-primary', async (req, res, next) => {
   try {
-    const img = db.queryOne('SELECT id, product_id FROM product_images WHERE id = ?', [req.params.imageId]);
+    const img = await db.queryOne('SELECT id, product_id FROM product_images WHERE id = ?', [req.params.imageId]);
     if (!img) {
       return res.status(404).json({ success: false, message: 'Image introuvable.' });
     }
 
-    db.transaction(() => {
-      db.execute('UPDATE product_images SET is_primary = 0 WHERE product_id = ?', [img.product_id]);
-      db.execute('UPDATE product_images SET is_primary = 1 WHERE id = ?', [img.id]);
+    await db.transaction(async () => {
+      await db.execute('UPDATE product_images SET is_primary = 0 WHERE product_id = ?', [img.product_id]);
+      await db.execute('UPDATE product_images SET is_primary = 1 WHERE id = ?', [img.id]);
     });
 
     res.json({ success: true, message: 'Photo principale mise à jour.' });
@@ -378,9 +377,9 @@ router.patch('/products/images/:imageId/set-primary', (req, res, next) => {
 });
 
 // Supprimer une image de produit
-router.delete('/products/images/:imageId', (req, res, next) => {
+router.delete('/products/images/:imageId', async (req, res, next) => {
   try {
-    db.execute('DELETE FROM product_images WHERE id = ?', [req.params.imageId]);
+    await db.execute('DELETE FROM product_images WHERE id = ?', [req.params.imageId]);
     res.json({ success: true, message: 'Image supprimée.' });
   } catch (err) {
     next(err);
@@ -390,7 +389,7 @@ router.delete('/products/images/:imageId', (req, res, next) => {
 // ==========================================
 // 3. GESTION DES COMMANDES
 // ==========================================
-router.get('/orders', (req, res, next) => {
+router.get('/orders', async (req, res, next) => {
   try {
     const { status, payment_status, search } = req.query;
 
@@ -415,7 +414,7 @@ router.get('/orders', (req, res, next) => {
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    const orders = db.queryAll(`
+    const orders = await db.queryAll(`
       SELECT o.*, 
              (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as items_count,
              z.name as zone_name
@@ -431,9 +430,9 @@ router.get('/orders', (req, res, next) => {
   }
 });
 
-router.get('/orders/:id', (req, res, next) => {
+router.get('/orders/:id', async (req, res, next) => {
   try {
-    const order = db.queryOne(`
+    const order = await db.queryOne(`
       SELECT o.*, z.name as zone_name, z.estimated_days
       FROM orders o
       LEFT JOIN delivery_zones z ON z.id = o.delivery_zone_id
@@ -444,8 +443,8 @@ router.get('/orders/:id', (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Commande introuvable.' });
     }
 
-    const items = db.queryAll('SELECT * FROM order_items WHERE order_id = ?', [order.id]);
-    const payments = db.queryAll('SELECT * FROM payments WHERE order_id = ? ORDER BY id DESC', [order.id]);
+    const items = await db.queryAll('SELECT * FROM order_items WHERE order_id = ?', [order.id]);
+    const payments = await db.queryAll('SELECT * FROM payments WHERE order_id = ? ORDER BY id DESC', [order.id]);
 
     res.json({ success: true, order, items, payments });
   } catch (err) {
@@ -454,7 +453,7 @@ router.get('/orders/:id', (req, res, next) => {
 });
 
 // Mettre à jour le statut d'une commande
-router.patch('/orders/:id/status', (req, res, next) => {
+router.patch('/orders/:id/status', async (req, res, next) => {
   try {
     const { status } = req.body;
     const orderId = req.params.id;
@@ -464,24 +463,23 @@ router.patch('/orders/:id/status', (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Statut de commande non valide.' });
     }
 
-    const order = db.queryOne('SELECT * FROM orders WHERE id = ?', [orderId]);
+    const order = await db.queryOne('SELECT * FROM orders WHERE id = ?', [orderId]);
     if (!order) {
       return res.status(404).json({ success: false, message: 'Commande introuvable.' });
     }
 
-    db.transaction(() => {
+    await db.transaction(async () => {
       // Si la commande est annulée et ne l'était pas avant, réapprovisionner le stock !
       if (status === 'cancelled' && order.order_status !== 'cancelled') {
-        const items = db.queryAll('SELECT product_id, quantity FROM order_items WHERE order_id = ?', [orderId]);
-        const restoreStock = db.getRawDb().prepare('UPDATE products SET stock = stock + ? WHERE id = ?');
+        const items = await db.queryAll('SELECT product_id, quantity FROM order_items WHERE order_id = ?', [orderId]);
         for (const it of items) {
           if (it.product_id) {
-            restoreStock.run(it.quantity, it.product_id);
+            await db.execute('UPDATE products SET stock = stock + ? WHERE id = ?', [it.quantity, it.product_id]);
           }
         }
       }
 
-      db.execute('UPDATE orders SET order_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [status, orderId]);
+      await db.execute('UPDATE orders SET order_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [status, orderId]);
     });
 
     res.json({ success: true, message: `Statut de la commande mis à jour: ${status}` });
@@ -491,7 +489,7 @@ router.patch('/orders/:id/status', (req, res, next) => {
 });
 
 // Mettre à jour le statut de paiement d'une commande
-router.patch('/orders/:id/payment-status', (req, res, next) => {
+router.patch('/orders/:id/payment-status', async (req, res, next) => {
   try {
     const { payment_status } = req.body;
     const orderId = req.params.id;
@@ -501,7 +499,7 @@ router.patch('/orders/:id/payment-status', (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Statut de paiement non valide.' });
     }
 
-    db.execute('UPDATE orders SET payment_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [payment_status, orderId]);
+    await db.execute('UPDATE orders SET payment_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [payment_status, orderId]);
     res.json({ success: true, message: `Statut de paiement mis à jour: ${payment_status}` });
   } catch (err) {
     next(err);
@@ -511,9 +509,9 @@ router.patch('/orders/:id/payment-status', (req, res, next) => {
 // ==========================================
 // 4. GESTION DES CATÉGORIES
 // ==========================================
-router.get('/categories', (req, res, next) => {
+router.get('/categories', async (req, res, next) => {
   try {
-    const categories = db.queryAll(`
+    const categories = await db.queryAll(`
       SELECT c.*, COUNT(p.id) as product_count
       FROM categories c
       LEFT JOIN products p ON p.category_id = c.id
@@ -527,7 +525,7 @@ router.get('/categories', (req, res, next) => {
   }
 });
 
-router.post('/categories', upload.single('image'), (req, res, next) => {
+router.post('/categories', upload.single('image'), async (req, res, next) => {
   try {
     const { name, description, display_order, image_url } = req.body;
 
@@ -538,33 +536,33 @@ router.post('/categories', upload.single('image'), (req, res, next) => {
     let baseSlug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     let slug = baseSlug;
     let counter = 1;
-    while (db.queryOne('SELECT id FROM categories WHERE slug = ?', [slug])) {
+    while (await db.queryOne('SELECT id FROM categories WHERE slug = ?', [slug])) {
       slug = `${baseSlug}-${counter}`;
       counter++;
     }
 
     const finalImage = req.file ? `/uploads/${req.file.filename}` : (image_url || null);
 
-    const result = db.execute(`
+    const result = await db.execute(`
       INSERT INTO categories (name, slug, description, image_url, display_order, is_active)
       VALUES (?, ?, ?, ?, ?, 1)
     `, [name.trim(), slug, description ? description.trim() : null, finalImage, display_order ? parseInt(display_order, 10) : 0]);
 
-    const created = db.queryOne('SELECT * FROM categories WHERE id = ?', [result.lastInsertRowid]);
+    const created = await db.queryOne('SELECT * FROM categories WHERE id = ?', [result.lastInsertRowid]);
     res.status(201).json({ success: true, message: 'Catégorie créée.', category: created });
   } catch (err) {
     next(err);
   }
 });
 
-router.put('/categories/:id', upload.single('image'), (req, res, next) => {
+router.put('/categories/:id', upload.single('image'), async (req, res, next) => {
   try {
     const { name, description, display_order, is_active, image_url } = req.body;
     const catId = req.params.id;
 
     const finalImage = req.file ? `/uploads/${req.file.filename}` : (image_url !== undefined ? image_url : undefined);
 
-    db.execute(`
+    await db.execute(`
       UPDATE categories
       SET name = COALESCE(?, name),
           description = COALESCE(?, description),
@@ -581,16 +579,16 @@ router.put('/categories/:id', upload.single('image'), (req, res, next) => {
       catId
     ]);
 
-    const updated = db.queryOne('SELECT * FROM categories WHERE id = ?', [catId]);
+    const updated = await db.queryOne('SELECT * FROM categories WHERE id = ?', [catId]);
     res.json({ success: true, message: 'Catégorie mise à jour.', category: updated });
   } catch (err) {
     next(err);
   }
 });
 
-router.delete('/categories/:id', (req, res, next) => {
+router.delete('/categories/:id', async (req, res, next) => {
   try {
-    db.execute('DELETE FROM categories WHERE id = ?', [req.params.id]);
+    await db.execute('DELETE FROM categories WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: 'Catégorie supprimée.' });
   } catch (err) {
     next(err);
@@ -600,9 +598,9 @@ router.delete('/categories/:id', (req, res, next) => {
 // ==========================================
 // 5. GESTION DES CLIENTS
 // ==========================================
-router.get('/customers', (req, res, next) => {
+router.get('/customers', async (req, res, next) => {
   try {
-    const customers = db.queryAll(`
+    const customers = await db.queryAll(`
       SELECT u.id, u.first_name, u.last_name, u.email, u.phone, u.city, u.region, u.created_at,
              COUNT(o.id) as orders_count,
              COALESCE(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total_amount ELSE 0 END), 0) as total_spent
@@ -622,9 +620,9 @@ router.get('/customers', (req, res, next) => {
 // ==========================================
 // 6. GESTION DES AVIS CLIENTS
 // ==========================================
-router.get('/reviews', (req, res, next) => {
+router.get('/reviews', async (req, res, next) => {
   try {
-    const reviews = db.queryAll(`
+    const reviews = await db.queryAll(`
       SELECT r.*, p.name as product_name, p.slug as product_slug
       FROM reviews r
       LEFT JOIN products p ON p.id = r.product_id
@@ -637,23 +635,23 @@ router.get('/reviews', (req, res, next) => {
   }
 });
 
-router.patch('/reviews/:id/status', (req, res, next) => {
+router.patch('/reviews/:id/status', async (req, res, next) => {
   try {
     const { status } = req.body;
     if (!['approved', 'pending', 'rejected'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Statut d’avis invalide.' });
     }
 
-    db.execute('UPDATE reviews SET status = ? WHERE id = ?', [status, req.params.id]);
+    await db.execute('UPDATE reviews SET status = ? WHERE id = ?', [status, req.params.id]);
     res.json({ success: true, message: `Avis ${status}.` });
   } catch (err) {
     next(err);
   }
 });
 
-router.delete('/reviews/:id', (req, res, next) => {
+router.delete('/reviews/:id', async (req, res, next) => {
   try {
-    db.execute('DELETE FROM reviews WHERE id = ?', [req.params.id]);
+    await db.execute('DELETE FROM reviews WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: 'Avis supprimé.' });
   } catch (err) {
     next(err);
@@ -663,39 +661,39 @@ router.delete('/reviews/:id', (req, res, next) => {
 // ==========================================
 // 7. ZONES DE LIVRAISON
 // ==========================================
-router.get('/delivery-zones', (req, res, next) => {
+router.get('/delivery-zones', async (req, res, next) => {
   try {
-    const zones = db.queryAll('SELECT * FROM delivery_zones ORDER BY price ASC');
+    const zones = await db.queryAll('SELECT * FROM delivery_zones ORDER BY price ASC');
     res.json({ success: true, zones });
   } catch (err) {
     next(err);
   }
 });
 
-router.post('/delivery-zones', (req, res, next) => {
+router.post('/delivery-zones', async (req, res, next) => {
   try {
     const { name, price, estimated_days } = req.body;
     if (!name || price === undefined) {
       return res.status(400).json({ success: false, message: 'Nom et tarif requis.' });
     }
 
-    const result = db.execute(`
+    const result = await db.execute(`
       INSERT INTO delivery_zones (name, price, estimated_days, is_active)
       VALUES (?, ?, ?, 1)
     `, [name.trim(), parseInt(price, 10), estimated_days ? estimated_days.trim() : null]);
 
-    const created = db.queryOne('SELECT * FROM delivery_zones WHERE id = ?', [result.lastInsertRowid]);
+    const created = await db.queryOne('SELECT * FROM delivery_zones WHERE id = ?', [result.lastInsertRowid]);
     res.status(201).json({ success: true, message: 'Zone de livraison ajoutée.', zone: created });
   } catch (err) {
     next(err);
   }
 });
 
-router.put('/delivery-zones/:id', (req, res, next) => {
+router.put('/delivery-zones/:id', async (req, res, next) => {
   try {
     const { name, price, estimated_days, is_active } = req.body;
 
-    db.execute(`
+    await db.execute(`
       UPDATE delivery_zones
       SET name = COALESCE(?, name),
           price = COALESCE(?, price),
@@ -710,16 +708,16 @@ router.put('/delivery-zones/:id', (req, res, next) => {
       req.params.id
     ]);
 
-    const updated = db.queryOne('SELECT * FROM delivery_zones WHERE id = ?', [req.params.id]);
+    const updated = await db.queryOne('SELECT * FROM delivery_zones WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: 'Zone mise à jour.', zone: updated });
   } catch (err) {
     next(err);
   }
 });
 
-router.delete('/delivery-zones/:id', (req, res, next) => {
+router.delete('/delivery-zones/:id', async (req, res, next) => {
   try {
-    db.execute('DELETE FROM delivery_zones WHERE id = ?', [req.params.id]);
+    await db.execute('DELETE FROM delivery_zones WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: 'Zone de livraison supprimée.' });
   } catch (err) {
     next(err);
@@ -729,9 +727,9 @@ router.delete('/delivery-zones/:id', (req, res, next) => {
 // ==========================================
 // 8. LOGS DE PAIEMENTS
 // ==========================================
-router.get('/payments', (req, res, next) => {
+router.get('/payments', async (req, res, next) => {
   try {
-    const payments = db.queryAll(`
+    const payments = await db.queryAll(`
       SELECT p.*, o.order_number, o.customer_name
       FROM payments p
       LEFT JOIN orders o ON o.id = p.order_id
@@ -748,9 +746,9 @@ router.get('/payments', (req, res, next) => {
 // ==========================================
 // 9. PARAMÈTRES DE LA BOUTIQUE
 // ==========================================
-router.get('/settings', (req, res, next) => {
+router.get('/settings', async (req, res, next) => {
   try {
-    const rows = db.queryAll('SELECT * FROM settings');
+    const rows = await db.queryAll('SELECT * FROM settings');
     const settings = {};
     for (const r of rows) {
       settings[r.key] = r.value;
@@ -761,18 +759,17 @@ router.get('/settings', (req, res, next) => {
   }
 });
 
-router.put('/settings', (req, res, next) => {
+router.put('/settings', async (req, res, next) => {
   try {
     const updates = req.body; // Objet clé -> valeur
-    const upsertStmt = db.getRawDb().prepare(`
-      INSERT INTO settings (key, value, updated_at)
-      VALUES (?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
-    `);
 
-    db.transaction(() => {
+    await db.transaction(async () => {
       for (const [key, value] of Object.entries(updates)) {
-        upsertStmt.run(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+        await db.execute(`
+          INSERT INTO settings (key, value, updated_at)
+          VALUES (?, ?, CURRENT_TIMESTAMP)
+          ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+        `, [key, typeof value === 'object' ? JSON.stringify(value) : String(value)]);
       }
     });
 
