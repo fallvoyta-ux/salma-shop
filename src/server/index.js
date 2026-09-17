@@ -110,7 +110,8 @@ app.listen(config.port, '0.0.0.0', async () => {
 
     // Vérifier si la base de données contient des produits, sinon lancer le seed
     const count = await db.queryOne('SELECT COUNT(*) as count FROM products');
-    if (!count || count.count === 0) {
+    const totalCount = count ? parseInt(count.count, 10) : 0;
+    if (totalCount === 0) {
       console.log('📦 Base de données vide détectée. Lancement automatique du seed initial...');
       await seedDatabase();
     }
