@@ -110,7 +110,29 @@ export default function Checkout({ onNavigate }) {
         showToast('Commande enregistrée avec succès !', 'success');
         clearCart();
 
-        // Si l'API Wave officielle fournit un lien de paiement direct hébergé
+        // 1. Détection mobile (Android / iOS)
+        const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+        const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+        // 2. Si Wave sélectionné : copier automatiquement le numéro 77 201 86 97
+        if (paymentMethod === 'wave') {
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText('77 201 86 97');
+            }
+          } catch (e) {
+            console.warn('Erreur copie presse-papier:', e);
+          }
+
+          // Déclencher l'ouverture de l'application Wave directement sur smartphone
+          if (isAndroid) {
+            window.location.href = 'intent:#Intent;package=com.wave.personal;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.wave.personal;end';
+          } else if (isIOS) {
+            window.location.href = 'wave://';
+          }
+        }
+
+        // 3. Si l'API Wave officielle fournit un lien de paiement direct hébergé
         if (data.payment && data.payment.checkoutUrl && data.payment.checkoutUrl.startsWith('http')) {
           window.location.href = data.payment.checkoutUrl;
           return;

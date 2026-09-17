@@ -44,7 +44,12 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
   const totalAmount = order ? order.total_amount : 0;
   const paymentMethod = order ? order.payment_method : 'wave';
 
-  const waveUrl = `https://wave.com/send?phone=${whatsappPhone}&amount=${totalAmount}`;
+  const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+  const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  const waveAppLink = isAndroid
+    ? 'intent:#Intent;package=com.wave.personal;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.wave.personal;end'
+    : 'wave://';
   const omUssdUrl = `tel:*144*1*1*${whatsappPhone}*${totalAmount}%23`;
 
   // Lien WhatsApp direct
@@ -211,23 +216,25 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxWidth: '420px', margin: '0 auto' }}>
                 <a
-                  href="wave://"
+                  href={waveAppLink}
+                  onClick={() => handleCopyNumber()}
                   className="btn btn-lg"
                   style={{
-                    background: 'rgba(255,255,255,0.95)',
+                    background: '#fff',
                     color: '#0284c7',
-                    fontWeight: 800,
-                    fontSize: '1.05rem',
-                    padding: '0.85rem 1.5rem',
+                    fontWeight: 900,
+                    fontSize: '1.1rem',
+                    padding: '0.95rem 1.5rem',
                     borderRadius: 'var(--radius-md)',
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '8px',
-                    border: 'none'
+                    gap: '10px',
+                    border: 'none',
+                    boxShadow: '0 6px 20px rgba(0,0,0,0.18)'
                   }}
                 >
-                  <span>🌊</span> Lancer l'application Wave sur mon mobile
+                  <span style={{ fontSize: '1.35rem' }}>🌊</span> Ouvrir l'application Wave sur mon mobile
                 </a>
 
                 <a
