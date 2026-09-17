@@ -38,8 +38,7 @@ export const paymentService = {
     }
 
     if (paymentMethod === 'wave') {
-      const waveSendUrl = `https://wave.com/send?phone=${config.storeWhatsApp}&amount=${amount}`;
-      const waveAppDeepLink = `wave://send?phone=${config.storeWhatsApp}&amount=${amount}`;
+      let waveLaunchUrl = null;
 
       if (isLive && config.wave.apiKey) {
         // En mode réel avec l'API Wave officielle
@@ -61,32 +60,27 @@ export const paymentService = {
           const data = await response.json();
           if (data.wave_launch_url) {
             checkoutUrl = data.wave_launch_url;
+            waveLaunchUrl = data.wave_launch_url;
             transactionId = data.id || transactionId;
-          } else {
-            checkoutUrl = waveSendUrl;
           }
         } catch (err) {
           console.error('Erreur API Wave Live:', err);
-          checkoutUrl = waveSendUrl;
         }
-      } else {
-        // Lien Wave direct vers le compte officiel Salma Shop (+221 77 201 86 97)
-        checkoutUrl = waveSendUrl;
-        instructions = `Lien direct vers l'application Wave de Salma Shop (${config.storePhone}) pour régler ${amount.toLocaleString('fr-FR')} FCFA.`;
       }
+
+      instructions = `Transfert Wave de ${amount.toLocaleString('fr-FR')} FCFA vers Salma Shop (${config.storePhone}).`;
 
       db.execute(`
         INSERT INTO payments (order_id, provider, transaction_id, amount, currency, status, raw_response)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, [order.id, 'wave', transactionId, amount, currency, 'pending', JSON.stringify({ isLive, provider: 'wave', waveSendUrl })]);
+      `, [order.id, 'wave', transactionId, amount, currency, 'pending', JSON.stringify({ isLive, provider: 'wave' })]);
 
       return {
         success: true,
         provider: 'wave',
         transactionId,
-        checkoutUrl,
-        waveSendUrl,
-        waveAppDeepLink,
+        checkoutUrl: waveLaunchUrl,
+        waveAppDeepLink: 'wave://',
         recipientName: config.storeName,
         recipientPhone: config.storePhone,
         recipientWhatsApp: config.storeWhatsApp,

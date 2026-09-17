@@ -110,16 +110,13 @@ export default function Checkout({ onNavigate }) {
         showToast('Commande enregistrée avec succès !', 'success');
         clearCart();
 
-        // Si paiement Wave, ouvrir directement le lien Wave de Salma Shop
-        if (paymentMethod === 'wave' && data.payment?.checkoutUrl) {
-          try {
-            window.open(data.payment.checkoutUrl, '_blank');
-          } catch (e) {
-            console.log('Ouverture Wave:', e);
-          }
+        // Si l'API Wave officielle fournit un lien de paiement direct hébergé
+        if (data.payment && data.payment.checkoutUrl && data.payment.checkoutUrl.startsWith('http')) {
+          window.location.href = data.payment.checkoutUrl;
+          return;
         }
 
-        onNavigate(`/order-confirmation/${data.order.order_number}?pay=${paymentMethod}`);
+        onNavigate(`/order-confirmation/${data.order.order_number}`);
       } else {
         showToast(data.message || 'Erreur lors de la validation de la commande.', 'error');
       }

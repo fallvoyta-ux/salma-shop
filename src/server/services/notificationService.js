@@ -5,7 +5,7 @@ export const notificationService = {
    * Génère le texte WhatsApp pour une nouvelle commande
    */
   generateOrderWhatsAppMessage(order, items = []) {
-    let itemsText = items.map(i => `• ${i.product_name} (x${i.quantity}) : ${(i.subtotal).toLocaleString('fr-FR')} FCFA`).join('\n');
+    let itemsText = items.map(i => `• ${i.product_name || i.name || 'Article'} (x${i.quantity}) : ${(i.subtotal).toLocaleString('fr-FR')} FCFA`).join('\n');
     
     return `🛍️ *NOUVELLE COMMANDE - ${config.storeName}*\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
