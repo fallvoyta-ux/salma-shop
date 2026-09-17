@@ -102,13 +102,6 @@ export default function Login({ onNavigate }) {
               Créer un compte
             </a>
           </div>
-
-          {/* Accès direct test rapide */}
-          <div style={{ marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            <div><strong>Comptes de test pré-configurés :</strong></div>
-            <div style={{ marginTop: '4px' }}>• Client : <code>client@terangashop.sn</code> / <code>ClientPass123!</code></div>
-            <div>• Admin : <a href="/admin/login" onClick={(e) => { e.preventDefault(); onNavigate('/admin/login'); }} style={{ color: 'var(--primary)' }}>Accéder à la connexion Administrateur →</a></div>
-          </div>
         </div>
       </div>
     </div>

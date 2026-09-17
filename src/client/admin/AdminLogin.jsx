@@ -6,8 +6,8 @@ export default function AdminLogin({ onNavigate }) {
   const { login } = useAuth();
   const { showToast } = useToast();
 
-  const [email, setEmail] = useState('admin@salmashop.sn');
-  const [password, setPassword] = useState('AdminSalma2026!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 

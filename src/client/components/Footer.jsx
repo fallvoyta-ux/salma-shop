@@ -185,7 +185,6 @@ export default function Footer({ onNavigate }) {
               <li><a href="/contact" onClick={(e) => { e.preventDefault(); onNavigate('/contact'); }}>📞 Contactez-nous</a></li>
               <li><a href="/terms" onClick={(e) => { e.preventDefault(); onNavigate('/terms'); }}>📜 Conditions de Vente</a></li>
               <li><a href="/privacy" onClick={(e) => { e.preventDefault(); onNavigate('/privacy'); }}>🔒 Confidentialité</a></li>
-              <li><a href="/admin/login" onClick={(e) => { e.preventDefault(); onNavigate('/admin/login'); }}>👑 Accès Propriétaire</a></li>
             </ul>
           </div>
 

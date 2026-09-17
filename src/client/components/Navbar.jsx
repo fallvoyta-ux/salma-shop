@@ -191,21 +191,6 @@ export default function Navbar({ currentPath, onNavigate }) {
                       >
                         Pas de compte ? <strong>Créer un compte</strong>
                       </a>
-
-                      <div className="dropdown-divider" />
-
-                      <a
-                        href="/admin/login"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setUserMenuOpen(false);
-                          onNavigate('/admin/login');
-                        }}
-                        className="dropdown-admin-link"
-                      >
-                        <span>👑</span>
-                        <span>Espace Propriétaire (Admin)</span>
-                      </a>
                     </div>
                   )}
                 </div>
