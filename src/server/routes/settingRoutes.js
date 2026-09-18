@@ -1,7 +1,28 @@
 import express from 'express';
 import { db } from '../db/connection.js';
+import { authenticate } from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/adminAuth.js';
 
 const router = express.Router();
+
+// Liste blanche des clés de configuration autorisées
+const ALLOWED_SETTING_KEYS = new Set([
+  'store_name',
+  'store_subtitle',
+  'store_slogan',
+  'store_phone',
+  'store_phone_alt1',
+  'store_phone_alt2',
+  'store_whatsapp',
+  'store_email',
+  'store_address',
+  'currency',
+  'announcement_bar',
+  'announcement_active',
+  'whatsapp_ordering_enabled',
+  'free_shipping_threshold',
+  'store_logo'
+]);
 
 // Récupérer tous les paramètres publics de la boutique
 router.get('/', async (req, res, next) => {
@@ -9,7 +30,9 @@ router.get('/', async (req, res, next) => {
     const rows = await db.queryAll('SELECT key, value FROM settings');
     const settings = {};
     for (const r of rows) {
-      settings[r.key] = r.value;
+      if (ALLOWED_SETTING_KEYS.has(r.key)) {
+        settings[r.key] = r.value;
+      }
     }
 
     res.json({
@@ -21,20 +44,29 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// Mettre à jour les paramètres de la boutique
-router.put('/', async (req, res, next) => {
+// Mettre à jour les paramètres de la boutique (Réservé exclusivement aux Administrateurs)
+router.put('/', authenticate, requireAdmin, async (req, res, next) => {
   try {
     const { settings } = req.body;
-    if (settings && typeof settings === 'object') {
-      for (const [key, value] of Object.entries(settings)) {
-        await db.execute(`
-          INSERT INTO settings (key, value, updated_at)
-          VALUES (?, ?, CURRENT_TIMESTAMP)
-          ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
-        `, [key, String(value)]);
-      }
+    if (!settings || typeof settings !== 'object') {
+      return res.status(400).json({
+        success: false,
+        message: 'Format de paramètres invalide.'
+      });
     }
-    res.json({ success: true, message: 'Paramètres mis à jour avec succès' });
+
+    for (const [key, value] of Object.entries(settings)) {
+      if (!ALLOWED_SETTING_KEYS.has(key)) {
+        continue; // Ignore toute clé non autorisée
+      }
+      await db.execute(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES (?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+      `, [key, String(value)]);
+    }
+
+    res.json({ success: true, message: 'Paramètres mis à jour avec succès.' });
   } catch (err) {
     next(err);
   }

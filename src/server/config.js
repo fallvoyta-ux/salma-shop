@@ -46,3 +46,16 @@ export const config = {
     apiSecret: process.env.PAYTECH_API_SECRET || ''
   }
 };
+
+export function validateConfig() {
+  const isProd = config.env === 'production';
+  if (isProd) {
+    if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'salma_shop_chic_ladies_dakar_secret_jwt_2026') {
+      console.warn('⚠️ AVERTISSEMENT DE SÉCURITÉ : JWT_SECRET utilise une clé par défaut en production.');
+    }
+    if (!process.env.DATABASE_URL) {
+      console.warn('⚠️ AVERTISSEMENT : Aucune DATABASE_URL fournie en production. SQLite local utilisé.');
+    }
+  }
+}
+

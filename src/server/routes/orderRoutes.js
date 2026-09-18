@@ -62,8 +62,8 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
     let createdOrder = null;
     let orderItemsData = [];
 
-    // Transaction DB : vérification des stocks et insertion
-    await db.transaction(async () => {
+    // Transaction DB réelle : toutes les opérations sont liées au même client SQL
+    await db.transaction(async (tx) => {
       let calculatedSubtotal = 0;
       const verifiedItems = [];
 
@@ -73,7 +73,7 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
 
         if (qty <= 0) continue;
 
-        const product = await db.queryOne('SELECT * FROM products WHERE id = ?', [prodId]);
+        const product = await tx.queryOne('SELECT * FROM products WHERE id = ?', [prodId]);
         if (!product) {
           throw new Error(`Le produit sélectionné (ID #${prodId}) n'est plus disponible.`);
         }
@@ -90,7 +90,7 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
         calculatedSubtotal += itemSubtotal;
 
         // Récupérer l'image principale
-        const primaryImg = await db.queryOne(`
+        const primaryImg = await tx.queryOne(`
           SELECT image_url FROM product_images WHERE product_id = ? AND is_primary = 1 LIMIT 1
         `, [product.id]);
 
@@ -116,15 +116,17 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
 
       const totalAmount = calculatedSubtotal + finalDeliveryFee;
 
-      // Génération du numéro unique de commande
-      const countRes = await db.queryOne('SELECT COUNT(*) as total FROM orders');
-      const nextSeq = (countRes ? Number(countRes.total) : 0) + 1;
-      const orderNumber = `CMD-2026-${String(nextSeq).padStart(6, '0')}`;
+      // Génération d'un numéro unique de commande anti-collision
+      const now = new Date();
+      const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
+      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      const timestampPart = String(Date.now()).slice(-4);
+      const orderNumber = `CMD-${datePart}-${timestampPart}${randomSuffix}`;
 
       const userId = req.user ? req.user.id : null;
 
-      // Insertion de la commande
-      const orderRes = await db.execute(`
+      // Insertion de la commande dans la transaction
+      const orderRes = await tx.execute(`
         INSERT INTO orders (
           order_number, user_id, customer_name, customer_email, customer_phone,
           delivery_region, delivery_city, delivery_address, delivery_notes,
@@ -135,7 +137,7 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
         orderNumber,
         userId,
         customer_name.trim(),
-        (customer_email || '').trim().toLowerCase() || 'client@terangashop.sn',
+        (customer_email || '').trim().toLowerCase() || 'client@salmashop.sn',
         customer_phone.trim(),
         delivery_region || 'Dakar',
         delivery_city.trim(),
@@ -151,19 +153,26 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
 
       const orderId = orderRes.lastInsertRowid;
 
-      // Insertion des articles et décrémentation des stocks (compatible PostgreSQL & SQLite)
+      // Insertion des articles et DÉCRÉMENTATION STRICTEMENT ATOMIQUE
       for (const it of verifiedItems) {
-        await db.execute(`
+        await tx.execute(`
           INSERT INTO order_items (order_id, product_id, product_name, product_image, unit_price, quantity, subtotal)
           VALUES (?, ?, ?, ?, ?, ?, ?)
         `, [orderId, it.product_id, it.name, it.image, it.price, it.quantity, it.subtotal]);
 
-        await db.execute(`
-          UPDATE products SET stock = stock - ? WHERE id = ?
-        `, [it.quantity, it.product_id]);
+        // Décrémentation atomique : échoue si le stock restant est inférieur à la quantité demandée
+        const stockRes = await tx.execute(`
+          UPDATE products 
+          SET stock = stock - ? 
+          WHERE id = ? AND stock >= ? AND is_active = 1
+        `, [it.quantity, it.product_id, it.quantity]);
+
+        if (stockRes.changes === 0) {
+          throw new Error(`Stock épuisé pour "${it.name}". Cet article vient d'être acheté par un autre client.`);
+        }
       }
 
-      createdOrder = await db.queryOne('SELECT * FROM orders WHERE id = ?', [orderId]);
+      createdOrder = await tx.queryOne('SELECT * FROM orders WHERE id = ?', [orderId]);
       orderItemsData = verifiedItems;
     });
 
@@ -182,16 +191,19 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
       whatsappUrl
     });
   } catch (err) {
+    if (err.message && (err.message.includes('Stock') || err.message.includes('disponible') || err.message.includes('panier'))) {
+      err.status = 400;
+    }
     next(err);
   }
 });
 
-// Suivi public d'une commande par son numéro
+// Suivi public d'une commande par son numéro (Données privées masquées pour respecter la vie privée)
 router.get('/track/:orderNumber', async (req, res, next) => {
   try {
     const order = await db.queryOne(`
-      SELECT o.id, o.order_number, o.customer_name, o.delivery_city, o.delivery_address,
-             o.total_amount, o.delivery_fee, o.order_status, o.payment_method, o.payment_status,
+      SELECT o.id, o.order_number, o.customer_name, o.customer_phone, o.delivery_city, o.delivery_address,
+             o.total_amount, o.delivery_fee, o.subtotal, o.order_status, o.payment_method, o.payment_status,
              o.created_at, z.name as zone_name
       FROM orders o
       LEFT JOIN delivery_zones z ON z.id = o.delivery_zone_id
@@ -211,9 +223,34 @@ router.get('/track/:orderNumber', async (req, res, next) => {
       WHERE order_id = ?
     `, [order.id]);
 
+    // Masquage privacy
+    const maskedName = order.customer_name 
+      ? order.customer_name.split(' ').map(n => n.length > 2 ? n[0] + '*'.repeat(n.length - 2) + n.slice(-1) : n[0] + '*').join(' ')
+      : 'Client';
+    
+    const cleanPhone = (order.customer_phone || '').replace(/\s+/g, '');
+    const maskedPhone = cleanPhone.length > 6
+      ? cleanPhone.slice(0, 4) + ' ••• •• ' + cleanPhone.slice(-2)
+      : '•• ••• •• ••';
+
+    const safeOrder = {
+      order_number: order.order_number,
+      customer_name: maskedName,
+      customer_phone: maskedPhone,
+      delivery_city: order.delivery_city,
+      delivery_fee: order.delivery_fee,
+      subtotal: order.subtotal,
+      total_amount: order.total_amount,
+      order_status: order.order_status,
+      payment_method: order.payment_method,
+      payment_status: order.payment_status,
+      created_at: order.created_at,
+      zone_name: order.zone_name
+    };
+
     res.json({
       success: true,
-      order,
+      order: safeOrder,
       items
     });
   } catch (err) {
@@ -241,7 +278,7 @@ router.get('/my-orders', authenticate, async (req, res, next) => {
   }
 });
 
-// Détail d'une commande par ID
+// Détail d'une commande par ID (Accès protégé propriétaire ou admin)
 router.get('/:id', optionalAuthenticate, async (req, res, next) => {
   try {
     const order = await db.queryOne(`
@@ -258,11 +295,17 @@ router.get('/:id', optionalAuthenticate, async (req, res, next) => {
       });
     }
 
-    // Si l'utilisateur est connecté et n'est pas admin, il ne doit voir que ses propres commandes
-    if (req.user && req.user.role !== 'admin' && order.user_id && order.user_id !== req.user.id) {
+    // Protection stricte de l'accès aux commandes :
+    const isOwner = req.user && order.user_id && order.user_id === req.user.id;
+    const isAdmin = req.user && req.user.role === 'admin';
+    const providedPhone = (req.query.phone || req.headers['x-order-phone'] || '').replace(/\D/g, '');
+    const orderPhone = (order.customer_phone || '').replace(/\D/g, '');
+    const isVerifiedGuest = !order.user_id && providedPhone && orderPhone && providedPhone.slice(-6) === orderPhone.slice(-6);
+
+    if (!isAdmin && !isOwner && !isVerifiedGuest) {
       return res.status(403).json({
         success: false,
-        message: 'Accès non autorisé à cette commande.'
+        message: 'Accès non autorisé à cette commande. Veuillez vous connecter ou vérifier votre numéro de téléphone.'
       });
     }
 

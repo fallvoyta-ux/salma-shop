@@ -5,10 +5,12 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import rateLimit from 'express-rate-limit';
 
-import { config } from './config.js';
+import { config, validateConfig } from './config.js';
 import { db, initSchema } from './db/connection.js';
 import { seedDatabase } from './db/seed.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { authenticate } from './middleware/auth.js';
+import { requireAdmin } from './middleware/adminAuth.js';
 
 // Import des routes
 import authRoutes from './routes/authRoutes.js';
@@ -25,15 +27,55 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '../..');
 
+// Validation environnement de démarrage
+validateConfig();
+
 const app = express();
 
-// Configuration CORS & Cookies
+// En-têtes HTTP de sécurité renforcés
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  if (config.env === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  res.removeHeader('X-Powered-By');
+  next();
+});
+
+// Configuration CORS sécurisée
+const allowedOrigins = [
+  'https://salmashop.onrender.com',
+  'https://www.salmashop.sn',
+  config.clientUrl
+].filter(Boolean);
+
 app.use(cors({
-  origin: true,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (
+      config.env !== 'production' ||
+      allowedOrigins.includes(origin) ||
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1') ||
+      origin.endsWith('.onrender.com')
+    ) {
+      return callback(null, true);
+    }
+    return callback(new Error('Origine CORS non autorisée'));
+  },
   credentials: true
 }));
 
-app.use(express.json({ limit: '10mb' }));
+// Body parsers avec capture de req.rawBody pour la vérification des signatures de webhooks (Wave HMAC)
+app.use(express.json({
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Dossier pour les fichiers téléversés
@@ -42,19 +84,43 @@ if (!fs.existsSync(config.uploadsDir)) {
 }
 app.use('/uploads', express.static(config.uploadsDir));
 
-// Servir également les fichiers statiques du dossier public (logos, icônes SVG de catégories...)
+// Servir les fichiers statiques du dossier public (logos, icônes SVG)
 const publicDir = path.resolve(rootDir, 'public');
 if (fs.existsSync(publicDir)) {
   app.use(express.static(publicDir));
 }
 
-// Limitation de requêtes sur l'authentification (anti force-brute)
+// 1. Limitation anti force-brute sur l'authentification
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30, // 30 requêtes max par fenêtre
+  windowMs: 15 * 60 * 1000,
+  max: 30,
   message: {
     success: false,
     message: 'Trop de tentatives de connexion. Veuillez patienter 15 minutes.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// 2. Limitation anti-inondation sur la création de commandes
+const orderLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 40,
+  message: {
+    success: false,
+    message: 'Trop de commandes passées récemment. Veuillez patienter quelques minutes.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// 3. Limitation sur les endpoints de paiement
+const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  message: {
+    success: false,
+    message: 'Trop de requêtes de paiement. Veuillez patienter.'
   },
   standardHeaders: true,
   legacyHeaders: false
@@ -64,15 +130,15 @@ const authLimiter = rateLimit({
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/payments', paymentRoutes);
+app.use('/api/orders', orderLimiter, orderRoutes);
+app.use('/api/payments', paymentLimiter, paymentRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/delivery-zones', deliveryRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Endpoint pour exécuter ou diagnostiquer le seed de la base de données
-app.post('/api/seed', async (req, res) => {
+// Endpoint d'administration pour exécuter le seed (sécurisé avec authenticate + requireAdmin)
+app.post('/api/seed', authenticate, requireAdmin, async (req, res) => {
   try {
     await initSchema();
     await seedDatabase();
@@ -118,7 +184,6 @@ app.listen(config.port, '0.0.0.0', async () => {
   console.log(`======================================================\n`);
 
   try {
-    // Initialiser le schéma de tables si nécessaire (PostgreSQL ou SQLite)
     await initSchema();
 
     // Vérifier si la base de données contient des produits, sinon lancer le seed

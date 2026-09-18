@@ -181,7 +181,36 @@ export const db = {
       const client = await pgPool.connect();
       try {
         await client.query('BEGIN');
-        const res = await fn(client);
+
+        // Objet transactionnel dédié exécutant TOUTES les requêtes sur CE client unique
+        const tx = {
+          async queryAll(sql, params = []) {
+            const flatParams = Array.isArray(params) ? params : [params];
+            const pgSql = convertSqlForPg(sql);
+            const res = await client.query(pgSql, flatParams);
+            return res.rows;
+          },
+          async queryOne(sql, params = []) {
+            const flatParams = Array.isArray(params) ? params : [params];
+            const pgSql = convertSqlForPg(sql);
+            const res = await client.query(pgSql, flatParams);
+            return res.rows.length > 0 ? res.rows[0] : null;
+          },
+          async execute(sql, params = []) {
+            const flatParams = Array.isArray(params) ? params : [params];
+            const pgSql = convertSqlForPg(sql);
+            const res = await client.query(pgSql, flatParams);
+            const lastId = res.rows && res.rows.length > 0 && res.rows[0].id !== undefined 
+              ? Number(res.rows[0].id) 
+              : 0;
+            return {
+              lastInsertRowid: lastId,
+              changes: res.rowCount || 0
+            };
+          }
+        };
+
+        const res = await fn(tx);
         await client.query('COMMIT');
         return res;
       } catch (e) {
@@ -193,7 +222,12 @@ export const db = {
     } else {
       sqliteDb.exec('BEGIN TRANSACTION;');
       try {
-        const result = await fn();
+        const tx = {
+          queryAll: db.queryAll.bind(db),
+          queryOne: db.queryOne.bind(db),
+          execute: db.execute.bind(db)
+        };
+        const result = await fn(tx);
         sqliteDb.exec('COMMIT;');
         return result;
       } catch (e) {

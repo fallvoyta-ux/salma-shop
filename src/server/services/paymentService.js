@@ -21,7 +21,7 @@ export const paymentService = {
       instructions = 'Paiement en espèces à effectuer auprès du livreur lors de la réception de votre colis.';
       
       // Enregistrer la transaction
-      db.execute(`
+      await db.execute(`
         INSERT INTO payments (order_id, provider, transaction_id, amount, currency, status, raw_response)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `, [order.id, 'cash', transactionId, amount, currency, 'pending', JSON.stringify({ mode: 'cash_on_delivery' })]);
@@ -70,7 +70,7 @@ export const paymentService = {
 
       instructions = `Transfert Wave de ${amount.toLocaleString('fr-FR')} FCFA vers ${config.storeName} (${config.storePhone} / 77 201 86 97).`;
 
-      db.execute(`
+      await db.execute(`
         INSERT INTO payments (order_id, provider, transaction_id, amount, currency, status, raw_response)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `, [order.id, 'wave', transactionId, amount, currency, 'pending', JSON.stringify({ isLive, provider: 'wave' })]);
@@ -103,7 +103,7 @@ export const paymentService = {
         instructions = `Composer le code USSD ${ussdCode} ou transférer ${amount.toLocaleString('fr-FR')} FCFA au ${config.storePhone} (${config.storeName}).`;
       }
 
-      db.execute(`
+      await db.execute(`
         INSERT INTO payments (order_id, provider, transaction_id, amount, currency, status, raw_response)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `, [order.id, 'orange_money', transactionId, amount, currency, 'pending', JSON.stringify({ isLive, provider: 'orange_money', ussdCode })]);
@@ -135,7 +135,7 @@ export const paymentService = {
         instructions = `Mode Test : Passerelle Carte Bancaire prête (PAYTECH_API_KEY dans .env). Compatible Visa et Mastercard.`;
       }
 
-      db.execute(`
+      await db.execute(`
         INSERT INTO payments (order_id, provider, transaction_id, amount, currency, status, raw_response)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `, [order.id, 'card', transactionId, amount, currency, 'pending', JSON.stringify({ isLive, provider: 'card' })]);
@@ -156,32 +156,59 @@ export const paymentService = {
 
   /**
    * Valide une transaction après confirmation (Webhook ou Callback sécurisé)
+   * Strictement idempotent et vérifie le montant réel
    */
   async verifyAndConfirmPayment(transactionId, status = 'successful', rawPayload = {}) {
-    const payment = db.queryOne('SELECT * FROM payments WHERE transaction_id = ?', [transactionId]);
+    const payment = await db.queryOne('SELECT * FROM payments WHERE transaction_id = ?', [transactionId]);
     if (!payment) {
       throw new Error(`Transaction ${transactionId} introuvable`);
     }
 
-    const newPaymentStatus = status === 'successful' ? 'paid' : (status === 'cancelled' ? 'failed' : 'pending');
+    // 1. Idempotence : Ne jamais traiter deux fois une transaction déjà validée
+    if (payment.status === 'paid' || payment.status === 'successful') {
+      return { 
+        success: true, 
+        paymentStatus: 'paid', 
+        alreadyProcessed: true,
+        message: 'Cette transaction a déjà été validée et enregistrée.' 
+      };
+    }
 
-    db.transaction(() => {
+    // 2. Vérification d'intégrité de la commande associée
+    const order = await db.queryOne('SELECT * FROM orders WHERE id = ?', [payment.order_id]);
+    if (!order) {
+      throw new Error(`Commande associée (ID #${payment.order_id}) introuvable.`);
+    }
+
+    // 3. Vérification du montant : le montant payé doit correspondre au montant total de la commande
+    if (status === 'successful') {
+      const paidAmount = Math.round(Number(payment.amount));
+      const expectedAmount = Math.round(Number(order.total_amount));
+      if (paidAmount !== expectedAmount) {
+        throw new Error(`Incohérence de montant détectée: montant payé (${paidAmount} FCFA) != montant commande (${expectedAmount} FCFA).`);
+      }
+    }
+
+    const newPaymentStatus = status === 'successful' ? 'successful' : (status === 'cancelled' ? 'cancelled' : (status === 'failed' ? 'failed' : 'pending'));
+
+    // 4. Mise à jour atomique dans une vraie transaction
+    await db.transaction(async (tx) => {
       // Mettre à jour la transaction
-      db.execute(`
+      await tx.execute(`
         UPDATE payments
         SET status = ?, raw_response = ?
         WHERE id = ?
-      `, [status, JSON.stringify(rawPayload), payment.id]);
+      `, [newPaymentStatus, JSON.stringify(rawPayload), payment.id]);
 
       // Mettre à jour la commande
       if (status === 'successful') {
-        db.execute(`
+        await tx.execute(`
           UPDATE orders
           SET payment_status = 'paid', order_status = 'confirmed', updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
         `, [payment.order_id]);
       } else if (status === 'failed' || status === 'cancelled') {
-        db.execute(`
+        await tx.execute(`
           UPDATE orders
           SET payment_status = 'failed', updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
@@ -189,6 +216,39 @@ export const paymentService = {
       }
     });
 
-    return { success: true, paymentStatus: newPaymentStatus };
+    return { 
+      success: true, 
+      paymentStatus: newPaymentStatus,
+      orderId: payment.order_id,
+      orderNumber: order.order_number
+    };
+  },
+
+  /**
+   * Vérifie une session en direct auprès de l'API officielle du prestataire
+   */
+  async verifyProviderSession(provider, transactionId) {
+    if (provider === 'wave') {
+      if (!config.wave.apiKey) {
+        throw new Error('Clé API Wave non configurée pour la vérification en direct.');
+      }
+      const response = await fetch(`https://api.wave.com/v1/checkout/sessions/${transactionId}`, {
+        headers: {
+          'Authorization': `Bearer ${config.wave.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`Erreur Wave API (${response.status}): ${response.statusText}`);
+      }
+      const data = await response.json();
+      return {
+        isSuccessful: data.payment_status === 'succeeded',
+        amount: data.amount ? Number(data.amount) : null,
+        currency: data.currency,
+        raw: data
+      };
+    }
+    return { isSuccessful: false };
   }
 };
