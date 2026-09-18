@@ -44,15 +44,19 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
       });
     }
 
-    // Récupération de la zone de livraison
+    // Récupération et validation stricte de la zone de livraison
     let deliveryFee = 2000; // Par défaut si non spécifié
     let zoneName = 'Livraison standard Dakar';
     if (delivery_zone_id) {
-      const zone = await db.queryOne('SELECT * FROM delivery_zones WHERE id = ?', [delivery_zone_id]);
-      if (zone) {
-        deliveryFee = zone.price;
-        zoneName = zone.name;
+      const zone = await db.queryOne('SELECT * FROM delivery_zones WHERE id = ? AND is_active = 1', [delivery_zone_id]);
+      if (!zone) {
+        return res.status(400).json({
+          success: false,
+          message: 'Zone de livraison sélectionnée invalide ou inactive.'
+        });
       }
+      deliveryFee = zone.price;
+      zoneName = zone.name;
     }
 
     // Récupération du seuil de gratuité de livraison depuis les paramètres
@@ -69,9 +73,19 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
 
       for (const item of items) {
         const prodId = item.productId || item.product_id || item.id;
-        const qty = parseInt(item.quantity, 10) || 1;
+        if (!prodId) {
+          const err = new Error('Identifiant de produit manquant.');
+          err.status = 400;
+          throw err;
+        }
 
-        if (qty <= 0) continue;
+        const rawQty = item.quantity;
+        const qty = Number(rawQty);
+        if (!Number.isInteger(qty) || qty <= 0 || qty > 100) {
+          const err = new Error(`Quantité invalide (${rawQty}) pour l'article demandé. La quantité doit être un nombre entier compris entre 1 et 100.`);
+          err.status = 400;
+          throw err;
+        }
 
         const product = await tx.queryOne('SELECT * FROM products WHERE id = ?', [prodId]);
         if (!product) {
@@ -176,8 +190,20 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
       orderItemsData = verifiedItems;
     });
 
-    // Initialiser le paiement via le service de paiement
-    const paymentInfo = await paymentService.initializePayment(createdOrder, payment_method);
+    // Initialiser le paiement via le service de paiement (avec rollback sécurisé du stock si échec)
+    let paymentInfo = null;
+    try {
+      paymentInfo = await paymentService.initializePayment(createdOrder, payment_method);
+    } catch (payInitErr) {
+      console.error('Échec initialisation paiement, annulation commande et restauration du stock:', payInitErr);
+      await db.transaction(async (tx) => {
+        for (const it of orderItemsData) {
+          await tx.execute('UPDATE products SET stock = stock + ? WHERE id = ?', [it.quantity, it.product_id]);
+        }
+        await tx.execute("UPDATE orders SET order_status = 'cancelled', payment_status = 'failed' WHERE id = ?", [createdOrder.id]);
+      });
+      throw payInitErr;
+    }
 
     // Générer le message et lien WhatsApp
     const whatsappUrl = notificationService.getOrderWhatsAppUrl(createdOrder, orderItemsData);
@@ -299,14 +325,15 @@ router.get('/:id', optionalAuthenticate, async (req, res, next) => {
     }
 
     // Protection stricte de l'accès aux commandes :
-    const isOwner = req.user && order.user_id && order.user_id === req.user.id;
+    const isOwner = req.user && order.user_id && Number(order.user_id) === Number(req.user.id);
     const isAdmin = req.user && req.user.role === 'admin';
     const providedPhone = (req.query.phone || req.headers['x-order-phone'] || '').replace(/\D/g, '');
     const orderPhone = (order.customer_phone || '').replace(/\D/g, '');
     const isVerifiedGuest = !order.user_id && providedPhone && orderPhone && providedPhone.slice(-6) === orderPhone.slice(-6);
 
     if (!isAdmin && !isOwner && !isVerifiedGuest) {
-      return res.status(403).json({
+      const statusCode = req.user ? 403 : 401;
+      return res.status(statusCode).json({
         success: false,
         message: 'Accès non autorisé à cette commande. Veuillez vous connecter ou vérifier votre numéro de téléphone.'
       });

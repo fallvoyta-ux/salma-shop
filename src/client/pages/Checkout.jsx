@@ -81,7 +81,7 @@ export default function Checkout({ onNavigate }) {
     try {
       const orderPayload = {
         customer_name: customerName.trim(),
-        customer_email: customerEmail.trim() || 'client@terangashop.sn',
+        customer_email: customerEmail.trim() || 'client@salmashop.sn',
         customer_phone: customerPhone.trim(),
         delivery_region: deliveryRegion,
         delivery_city: deliveryCity.trim(),
@@ -95,11 +95,12 @@ export default function Checkout({ onNavigate }) {
         }))
       };
 
+      const authToken = localStorage.getItem('salma_token') || localStorage.getItem('teranga_token');
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(user && localStorage.getItem('teranga_token') ? { 'Authorization': `Bearer ${localStorage.getItem('teranga_token')}` } : {})
+          ...(user && authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
         },
         body: JSON.stringify(orderPayload)
       });

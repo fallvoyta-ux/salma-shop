@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS payments (
   transaction_id TEXT,
   amount INTEGER NOT NULL,
   currency TEXT NOT NULL DEFAULT 'XOF',
-  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'successful', 'failed', 'cancelled')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'processing', 'paid', 'successful', 'failed', 'cancelled', 'refunded')),
   raw_response TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -149,6 +149,19 @@ CREATE TABLE IF NOT EXISTS settings (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 11. Table du journal d'audit administratif
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  admin_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  action TEXT NOT NULL,
+  entity TEXT NOT NULL,
+  entity_id TEXT,
+  old_values TEXT,
+  new_values TEXT,
+  ip_address TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Index pour accélérer les recherches et requêtes
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_is_active ON products(is_active);
@@ -158,3 +171,4 @@ CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(order_status);
 CREATE INDEX IF NOT EXISTS idx_orders_number ON orders(order_number);
 CREATE INDEX IF NOT EXISTS idx_reviews_product ON reviews(product_id, status);
 CREATE INDEX IF NOT EXISTS idx_product_images_product ON product_images(product_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);

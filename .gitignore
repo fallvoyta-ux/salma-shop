@@ -5,7 +5,15 @@ database.sqlite-journal
 database.sqlite-wal
 database.sqlite-shm
 .env
+.env.local
 uploads/*
 !uploads/.gitkeep
 .DS_Store
 Thumbs.db
+*.zip
+*.tar.gz
+*.log
+npm-debug.log*
+.agents/
+.gemini/
+scratch/

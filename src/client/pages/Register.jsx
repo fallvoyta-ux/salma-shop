@@ -59,7 +59,7 @@ export default function Register({ onNavigate }) {
             <span className="section-tag">Nouveau Client</span>
             <h1 style={{ fontSize: '1.8rem', color: 'var(--dark)', marginTop: '0.25rem' }}>Créer un Compte</h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              Rejoignez la communauté Teranga Shop Dakar et profitez d'un suivi simplifié.
+              Rejoignez Global Business Services Grp SF et profitez d'un suivi de commande simplifié.
             </p>
           </div>
 

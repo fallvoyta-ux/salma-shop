@@ -126,13 +126,42 @@ export const paymentService = {
     }
 
     if (paymentMethod === 'card') {
-      // Carte bancaire via PayTech SN ou Stripe
-      if (isLive && config.paytech.apiKey) {
-        // Appel API PayTech officiel
-        checkoutUrl = 'https://paytech.sn/payment/checkout';
-      } else {
+      // Carte bancaire via PayTech SN (Visa, Mastercard, GIM-UEMOA)
+      if (config.paytech.apiKey && config.paytech.apiSecret) {
+        try {
+          const paytechRes = await fetch('https://paytech.sn/api/payment/request-payment', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'API_KEY': config.paytech.apiKey,
+              'API_SECRET': config.paytech.apiSecret
+            },
+            body: JSON.stringify({
+              item_name: `Commande ${orderNumber}`,
+              item_price: amount,
+              currency: 'XOF',
+              ref_command: orderNumber,
+              command_name: `Paiement Commande ${orderNumber} - Salma Shop`,
+              env: isLive ? 'live' : 'test',
+              ipn_url: `${config.serverUrl || 'https://salmashop.onrender.com'}/api/payments/webhook/paytech`,
+              success_url: `${config.clientUrl}/order-confirmation/${orderNumber}?status=success&trx=${transactionId}`,
+              cancel_url: `${config.clientUrl}/order-confirmation/${orderNumber}?status=cancelled`
+            })
+          });
+          const paytechData = await paytechRes.json();
+          if (paytechData.success === 1 && paytechData.redirect_url) {
+            checkoutUrl = paytechData.redirect_url;
+            transactionId = paytechData.token || transactionId;
+          }
+        } catch (err) {
+          console.error('Erreur API PayTech:', err);
+        }
+      }
+
+      if (!checkoutUrl) {
         checkoutUrl = `${config.clientUrl}/order-confirmation/${orderNumber}?simulated_gateway=card&amount=${amount}`;
-        instructions = `Mode Test : Passerelle Carte Bancaire prête (PAYTECH_API_KEY dans .env). Compatible Visa et Mastercard.`;
+        instructions = `Passerelle Carte Bancaire sécurisée (PayTech SN). Compatible Visa, Mastercard et GIM-UEMOA.`;
       }
 
       await db.execute(`
@@ -181,7 +210,7 @@ export const paymentService = {
     }
 
     // 3. Vérification du montant : le montant payé doit correspondre au montant total de la commande
-    if (status === 'successful') {
+    if (status === 'successful' || status === 'paid') {
       const paidAmount = Math.round(Number(payment.amount));
       const expectedAmount = Math.round(Number(order.total_amount));
       if (paidAmount !== expectedAmount) {
@@ -189,7 +218,10 @@ export const paymentService = {
       }
     }
 
-    const newPaymentStatus = status === 'successful' ? 'successful' : (status === 'cancelled' ? 'cancelled' : (status === 'failed' ? 'failed' : 'pending'));
+    // Vocabulaire canonique unifié : 'pending', 'processing', 'paid', 'failed', 'refunded', 'cancelled'
+    const newPaymentStatus = (status === 'successful' || status === 'paid') 
+      ? 'paid' 
+      : (status === 'cancelled' ? 'cancelled' : (status === 'failed' ? 'failed' : 'pending'));
 
     // 4. Mise à jour atomique dans une vraie transaction
     await db.transaction(async (tx) => {
@@ -201,18 +233,18 @@ export const paymentService = {
       `, [newPaymentStatus, JSON.stringify(rawPayload), payment.id]);
 
       // Mettre à jour la commande
-      if (status === 'successful') {
+      if (newPaymentStatus === 'paid') {
         await tx.execute(`
           UPDATE orders
           SET payment_status = 'paid', order_status = 'confirmed', updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
         `, [payment.order_id]);
-      } else if (status === 'failed' || status === 'cancelled') {
+      } else if (newPaymentStatus === 'failed' || newPaymentStatus === 'cancelled') {
         await tx.execute(`
           UPDATE orders
-          SET payment_status = 'failed', updated_at = CURRENT_TIMESTAMP
+          SET payment_status = ?, updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
-        `, [payment.order_id]);
+        `, [newPaymentStatus, payment.order_id]);
       }
     });
 

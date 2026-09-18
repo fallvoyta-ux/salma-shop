@@ -28,7 +28,7 @@ export default function Settings({ onNavigate }) {
   useEffect(() => {
     if (settings) {
       setFormValues({
-        store_name: settings.store_name || 'Teranga Shop Dakar',
+        store_name: settings.store_name || 'Global Business Services Grp SF',
         store_slogan: settings.store_slogan || '',
         store_description: settings.store_description || '',
         store_phone: settings.store_phone || '',

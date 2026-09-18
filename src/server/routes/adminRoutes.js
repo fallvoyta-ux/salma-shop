@@ -41,13 +41,13 @@ router.get('/stats', async (req, res, next) => {
       LIMIT 10
     `);
 
-    // Ventes des 7 derniers jours (pour le graphique)
+    // Ventes des 7 derniers jours (uniquement les commandes payées et validées)
     const salesChart = await db.queryAll(`
       SELECT DATE(created_at) as date,
              COUNT(*) as order_count,
              COALESCE(SUM(total_amount), 0) as total_sales
       FROM orders
-      WHERE created_at >= DATE('now', '-7 days')
+      WHERE created_at >= DATE('now', '-7 days') AND payment_status = 'paid'
       GROUP BY DATE(created_at)
       ORDER BY date ASC
     `);

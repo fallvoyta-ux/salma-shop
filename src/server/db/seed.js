@@ -54,8 +54,7 @@ export async function seedDatabase() {
 
   const usersToInsert = [
     { fn: 'Salma', ln: 'Propriétaire', em: 'admin@salmashop.sn', ph: '+221 77 201 86 97', pw: adminSalmaPasswordHash, role: 'admin', ad: 'Dakar' },
-    { fn: 'Fatou', ln: 'Diop', em: 'client@salmashop.sn', ph: '+221 78 987 65 43', pw: clientSalmaPasswordHash, role: 'client', ad: 'Almadies' },
-    { fn: 'Salma', ln: 'Admin', em: 'admin@terangashop.sn', ph: '+221 77 201 86 97', pw: adminSalmaPasswordHash, role: 'admin', ad: 'Dakar' }
+    { fn: 'Fatou', ln: 'Diop', em: 'client@salmashop.sn', ph: '+221 78 987 65 43', pw: clientSalmaPasswordHash, role: 'client', ad: 'Almadies' }
   ];
 
   for (const u of usersToInsert) {
@@ -140,20 +139,25 @@ export async function seedDatabase() {
     }
   ];
 
-  // Réinitialiser les catégories et produits pour garantir la cohérence
-  await db.execute('DELETE FROM product_images');
-  await db.execute('DELETE FROM order_items');
-  await db.execute('DELETE FROM reviews');
-  await db.execute('DELETE FROM products');
-  await db.execute('DELETE FROM categories');
+  // 4. Seeding non-destructif : ne jamais supprimer les commandes ni écraser un catalogue existant
+  const existingProdsCount = await db.queryOne('SELECT COUNT(*) as count FROM products');
+  if (existingProdsCount && parseInt(existingProdsCount.count, 10) > 0) {
+    console.log(`ℹ️ La base de données contient déjà ${existingProdsCount.count} produit(s). Seeding sauté pour protéger les données.`);
+    return;
+  }
 
   const categoryMap = {};
   for (const c of categoriesData) {
-    const res = await db.execute(`
-      INSERT INTO categories (name, slug, description, image_url, display_order)
-      VALUES (?, ?, ?, ?, ?)
-    `, [c.name, c.slug, c.description, c.image_url, c.display_order]);
-    categoryMap[c.slug] = res.lastInsertRowid;
+    let cat = await db.queryOne('SELECT id FROM categories WHERE slug = ?', [c.slug]);
+    if (!cat) {
+      const res = await db.execute(`
+        INSERT INTO categories (name, slug, description, image_url, display_order)
+        VALUES (?, ?, ?, ?, ?)
+      `, [c.name, c.slug, c.description, c.image_url, c.display_order]);
+      categoryMap[c.slug] = res.lastInsertRowid;
+    } else {
+      categoryMap[c.slug] = cat.id;
+    }
   }
 
   // 5. Produits Couvrant TOUS les Articles de l'Utilisatrice

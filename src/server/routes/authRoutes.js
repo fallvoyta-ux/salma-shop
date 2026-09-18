@@ -66,7 +66,7 @@ router.post('/register', async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: 'Compte créé avec succès ! Bienvenue sur Teranga Shop.',
+      message: 'Compte créé avec succès ! Bienvenue sur Global Business Services Grp SF.',
       token,
       user: newUser
     });

@@ -18,21 +18,21 @@ function ask(question, hidden = false) {
 
 async function createAdmin() {
   console.log('\n======================================================');
-  console.log('👑 TERANGA SHOP DAKAR - CRÉATION DU COMPTE ADMINISTRATEUR');
+  console.log('👑 GLOBAL BUSINESS SERVICES GRP SF (SALMA SHOP) - ADMIN');
   console.log('======================================================\n');
 
   let email = process.env.ADMIN_DEFAULT_EMAIL || '';
   let password = process.env.ADMIN_DEFAULT_PASSWORD || '';
-  let firstName = 'Awa';
-  let lastName = 'Ndiaye';
-  let phone = '+221 77 123 45 67';
+  let firstName = 'Salma';
+  let lastName = 'Fall';
+  let phone = '+221 77 201 86 97';
 
   // Si non fourni par l'environnement, demander de manière interactive
   if (!email || !password) {
-    firstName = await ask('Prénom de la propriétaire / administratrice (ex: Awa) : ') || firstName;
-    lastName = await ask('Nom de famille (ex: Ndiaye) : ') || lastName;
+    firstName = await ask('Prénom de la propriétaire / administratrice (ex: Salma) : ') || firstName;
+    lastName = await ask('Nom de famille (ex: Fall) : ') || lastName;
     email = await ask('Email professionnel de connexion : ');
-    phone = await ask('Téléphone / WhatsApp (ex: +221 77 123 45 67) : ') || phone;
+    phone = await ask('Téléphone / WhatsApp (ex: +221 77 201 86 97) : ') || phone;
     password = await ask('Mot de passe sécurisé (min 8 caractères) : ');
   }
 
@@ -41,18 +41,18 @@ async function createAdmin() {
     process.exit(1);
   }
 
-  const existing = db.queryOne('SELECT id, role FROM users WHERE email = ?', [email.toLowerCase()]);
+  const existing = await db.queryOne('SELECT id, role FROM users WHERE email = ?', [email.toLowerCase()]);
   const passwordHash = await bcrypt.hash(password, 12);
 
   if (existing) {
-    db.execute(`
+    await db.execute(`
       UPDATE users 
       SET first_name = ?, last_name = ?, phone = ?, password_hash = ?, role = 'admin', updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `, [firstName, lastName, phone, passwordHash, existing.id]);
     console.log(`\n✅ Le compte existant "${email}" a été promu en ADMINISTRATEUR avec succès !`);
   } else {
-    db.execute(`
+    await db.execute(`
       INSERT INTO users (first_name, last_name, email, phone, password_hash, role, city, region)
       VALUES (?, ?, ?, ?, ?, 'admin', 'Dakar', 'Dakar')
     `, [firstName, lastName, email.toLowerCase(), phone, passwordHash]);

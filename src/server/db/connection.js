@@ -16,10 +16,14 @@ let pgPool = null;
 let sqliteDb = null;
 
 if (isPostgres) {
-  console.log('🐘 Connexion à la base de données PostgreSQL (Railway Cloud)...');
+  const isLocalDb = process.env.DATABASE_URL.includes('localhost') || process.env.DATABASE_URL.includes('127.0.0.1');
+  const sslConfig = isLocalDb 
+    ? false 
+    : (process.env.DB_SSL_STRICT === 'true' ? { rejectUnauthorized: true } : { rejectUnauthorized: false });
+
   pgPool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false },
+    ssl: sslConfig,
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000
@@ -33,6 +37,8 @@ if (isPostgres) {
   sqliteDb = new DatabaseSync(config.dbFilePath);
   sqliteDb.exec('PRAGMA foreign_keys = ON;');
 }
+
+let sqliteTxLock = Promise.resolve();
 
 /**
  * Convertit une requête SQLite avec des placeholders '?' en syntaxe PostgreSQL ($1, $2, ...)
@@ -99,6 +105,35 @@ export async function initSchema() {
       const schemaPath = path.join(__dirname, 'schema.sql');
       const schemaSql = fs.readFileSync(schemaPath, 'utf8');
       sqliteDb.exec(schemaSql);
+
+      // Migration non-destructive : vérifier si la table payments supporte le statut 'paid'
+      try {
+        const stmt = sqliteDb.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='payments'");
+        const tableRow = stmt.get();
+        if (tableRow && tableRow.sql && !tableRow.sql.includes("'paid'")) {
+          sqliteDb.exec(`
+            CREATE TABLE IF NOT EXISTS payments_new (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+              provider TEXT NOT NULL CHECK(provider IN ('wave', 'orange_money', 'card', 'paytech', 'cash')),
+              transaction_id TEXT UNIQUE,
+              amount INTEGER NOT NULL,
+              currency TEXT NOT NULL DEFAULT 'XOF',
+              status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'processing', 'successful', 'paid', 'failed', 'cancelled', 'refunded')),
+              raw_response TEXT,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+            INSERT INTO payments_new (id, order_id, provider, transaction_id, amount, currency, status, raw_response, created_at)
+            SELECT id, order_id, provider, transaction_id, amount, currency, status, raw_response, created_at FROM payments;
+            DROP TABLE payments;
+            ALTER TABLE payments_new RENAME TO payments;
+            CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id);
+            CREATE INDEX IF NOT EXISTS idx_payments_transaction ON payments(transaction_id);
+          `);
+        }
+      } catch (migErr) {
+        console.warn('Note migration SQLite payments:', migErr.message);
+      }
     }
   } catch (err) {
     console.error('Erreur lors de l\'initialisation du schéma DB:', err);
@@ -220,23 +255,35 @@ export const db = {
         client.release();
       }
     } else {
-      sqliteDb.exec('BEGIN TRANSACTION;');
-      try {
-        const tx = {
-          queryAll: db.queryAll.bind(db),
-          queryOne: db.queryOne.bind(db),
-          execute: db.execute.bind(db)
-        };
-        const result = await fn(tx);
-        sqliteDb.exec('COMMIT;');
-        return result;
-      } catch (e) {
-        sqliteDb.exec('ROLLBACK;');
-        throw e;
-      }
+      // Pour SQLite (connexion unique), sérialiser les transactions via une file d'attente async
+      // afin de garantir l'atomicité et éviter l'erreur "cannot start a transaction within a transaction"
+      const executeTx = async () => {
+        sqliteDb.exec('BEGIN TRANSACTION;');
+        try {
+          const tx = {
+            queryAll: db.queryAll.bind(db),
+            queryOne: db.queryOne.bind(db),
+            execute: db.execute.bind(db)
+          };
+          const result = await fn(tx);
+          sqliteDb.exec('COMMIT;');
+          return result;
+        } catch (e) {
+          try { sqliteDb.exec('ROLLBACK;'); } catch (_) {}
+          throw e;
+        }
+      };
+
+      const currentLock = sqliteTxLock;
+      const nextPromise = (async () => {
+        try {
+          await currentLock;
+        } catch (_) {}
+        return await executeTx();
+      })();
+
+      sqliteTxLock = nextPromise.catch(() => {});
+      return await nextPromise;
     }
   }
 };
-
-// Initialisation au chargement
-initSchema();

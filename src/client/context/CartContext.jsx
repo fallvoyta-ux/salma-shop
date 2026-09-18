@@ -5,7 +5,7 @@ const CartContext = createContext(null);
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState(() => {
     try {
-      const saved = localStorage.getItem('teranga_cart');
+      const saved = localStorage.getItem('salma_cart') || localStorage.getItem('teranga_cart');
       return saved ? JSON.parse(saved) : [];
     } catch (e) {
       return [];
@@ -17,7 +17,7 @@ export function CartProvider({ children }) {
   // Sauvegarder dans le localStorage à chaque modification
   useEffect(() => {
     try {
-      localStorage.setItem('teranga_cart', JSON.stringify(cartItems));
+      localStorage.setItem('salma_cart', JSON.stringify(cartItems));
     } catch (e) {
       console.error('Erreur sauvegarde panier localStorage:', e);
     }
@@ -86,6 +86,7 @@ export function CartProvider({ children }) {
 
   const clearCart = () => {
     setCartItems([]);
+    localStorage.removeItem('salma_cart');
     localStorage.removeItem('teranga_cart');
   };
 

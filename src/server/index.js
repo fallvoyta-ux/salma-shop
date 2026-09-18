@@ -22,6 +22,7 @@ import reviewRoutes from './routes/reviewRoutes.js';
 import deliveryRoutes from './routes/deliveryRoutes.js';
 import settingRoutes from './routes/settingRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import contactRoutes from './routes/contactRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -136,19 +137,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/delivery-zones', deliveryRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/admin', adminRoutes);
-
-// Endpoint d'administration pour exécuter le seed (sécurisé avec authenticate + requireAdmin)
-app.post('/api/seed', authenticate, requireAdmin, async (req, res) => {
-  try {
-    await initSchema();
-    await seedDatabase();
-    const count = await db.queryOne('SELECT COUNT(*) as count FROM products');
-    res.json({ success: true, message: 'Seed exécuté avec succès', productsCount: count ? count.count : 0 });
-  } catch (err) {
-    console.error('Erreur lors du seed API:', err);
-    res.status(500).json({ success: false, error: err.message, stack: err.stack });
-  }
-});
+app.use('/api/contact', contactRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -175,14 +164,8 @@ if (fs.existsSync(distPath)) {
 // Gestionnaire d'erreurs global
 app.use(errorHandler);
 
-// Démarrage du serveur et initialisation automatique si nécessaire
-app.listen(config.port, '0.0.0.0', async () => {
-  console.log(`\n======================================================`);
-  console.log(`🚀 GLOBAL BUSINESS SERVICES GRP SF - GROUPE SALMA FALL`);
-  console.log(`🌐 URL : http://localhost:${config.port}`);
-  console.log(`💳 Mode Paiement : [${config.paymentMode.toUpperCase()}]`);
-  console.log(`======================================================\n`);
-
+// Initialisation ordonnée de la base de données PUIS démarrage du serveur
+async function startServer() {
   try {
     await initSchema();
 
@@ -194,8 +177,18 @@ app.listen(config.port, '0.0.0.0', async () => {
       await seedDatabase();
     }
   } catch (err) {
-    console.error('Erreur lors de la vérification du seed:', err);
+    console.error('Erreur lors de l\'initialisation de la DB:', err);
   }
-});
+
+  app.listen(config.port, '0.0.0.0', () => {
+    console.log(`\n======================================================`);
+    console.log(`🚀 GLOBAL BUSINESS SERVICES GRP SF - GROUPE SALMA FALL`);
+    console.log(`🌐 URL : http://localhost:${config.port}`);
+    console.log(`💳 Mode Paiement : [${config.paymentMode.toUpperCase()}]`);
+    console.log(`======================================================\n`);
+  });
+}
+
+startServer();
 
 export default app;

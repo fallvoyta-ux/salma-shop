@@ -4,7 +4,7 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem('teranga_token') || null);
+  const [token, setToken] = useState(() => localStorage.getItem('salma_token') || localStorage.getItem('teranga_token') || null);
   const [loading, setLoading] = useState(true);
 
   // Vérifier la session au montage si un jeton existe
@@ -26,6 +26,7 @@ export function AuthProvider({ children }) {
           setUser(data.user);
         } else {
           // Jeton invalide ou expiré
+          localStorage.removeItem('salma_token');
           localStorage.removeItem('teranga_token');
           setToken(null);
           setUser(null);
@@ -53,7 +54,7 @@ export function AuthProvider({ children }) {
       throw new Error(data.message || 'Échec de connexion.');
     }
 
-    localStorage.setItem('teranga_token', data.token);
+    localStorage.setItem('salma_token', data.token);
     setToken(data.token);
     setUser(data.user);
     return data.user;
@@ -72,7 +73,7 @@ export function AuthProvider({ children }) {
       throw new Error(data.message || 'Échec de l’inscription.');
     }
 
-    localStorage.setItem('teranga_token', data.token);
+    localStorage.setItem('salma_token', data.token);
     setToken(data.token);
     setUser(data.user);
     return data.user;
@@ -80,6 +81,7 @@ export function AuthProvider({ children }) {
 
   // Déconnexion
   const logout = () => {
+    localStorage.removeItem('salma_token');
     localStorage.removeItem('teranga_token');
     setToken(null);
     setUser(null);

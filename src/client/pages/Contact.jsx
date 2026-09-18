@@ -10,12 +10,33 @@ export default function Contact({ onNavigate }) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
-  const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [whatsappUrl, setWhatsappUrl] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    showToast('Merci ! Votre message a bien été envoyé. Nous vous répondrons très rapidement.', 'success');
-    setSent(true);
+    setLoading(true);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, message })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('✓ Votre message a été enregistré avec succès !', 'success');
+        setSent(true);
+        if (data.whatsappUrl) {
+          setWhatsappUrl(data.whatsappUrl);
+        }
+      } else {
+        showToast(data.message || 'Erreur lors de l’envoi de votre message.', 'error');
+      }
+    } catch (err) {
+      showToast('Une erreur de connexion est survenue.', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -40,7 +61,20 @@ export default function Contact({ onNavigate }) {
               <div style={{ background: 'var(--success-bg)', padding: '2rem', borderRadius: 'var(--radius-md)', textAlign: 'center', color: 'var(--success)' }}>
                 <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>✓</div>
                 <h4 style={{ marginBottom: '0.5rem' }}>Message envoyé avec succès !</h4>
-                <p style={{ fontSize: '0.92rem' }}>Notre équipe vous répondra dans les plus brefs délais.</p>
+                <p style={{ fontSize: '0.92rem', marginBottom: '1.5rem', color: '#15803d' }}>
+                  Votre demande a bien été transmise à notre service client. Nous vous répondrons très rapidement !
+                </p>
+                {whatsappUrl && (
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn btn-whatsapp btn-block"
+                    style={{ fontWeight: 800, fontSize: '1rem', padding: '0.85rem' }}
+                  >
+                    💬 Ouvrir la discussion sur WhatsApp (+221 77 201 86 97)
+                  </a>
+                )}
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
@@ -93,8 +127,8 @@ export default function Contact({ onNavigate }) {
                   />
                 </div>
 
-                <button type="submit" className="btn btn-primary btn-block btn-lg">
-                  Envoyer mon message →
+                <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={loading}>
+                  {loading ? 'Envoi en cours...' : 'Envoyer mon message →'}
                 </button>
               </form>
             )}
