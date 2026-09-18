@@ -187,15 +187,23 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// Détail d'un produit par son slug
+// Détail d'un produit par son slug ou son ID
 router.get('/:slug', async (req, res, next) => {
   try {
-    const product = await db.queryOne(`
-      SELECT p.*, c.name as category_name, c.slug as category_slug
-      FROM products p
-      LEFT JOIN categories c ON c.id = p.category_id
-      WHERE (p.slug = ? OR p.id = ?) AND p.is_active = 1
-    `, [req.params.slug, req.params.slug]);
+    const slugParam = req.params.slug;
+    const isNumeric = /^\d+$/.test(slugParam);
+    const query = isNumeric
+      ? `SELECT p.*, c.name as category_name, c.slug as category_slug
+         FROM products p
+         LEFT JOIN categories c ON c.id = p.category_id
+         WHERE (p.slug = ? OR p.id = ?) AND p.is_active = 1`
+      : `SELECT p.*, c.name as category_name, c.slug as category_slug
+         FROM products p
+         LEFT JOIN categories c ON c.id = p.category_id
+         WHERE p.slug = ? AND p.is_active = 1`;
+    const params = isNumeric ? [slugParam, parseInt(slugParam, 10)] : [slugParam];
+
+    const product = await db.queryOne(query, params);
 
     if (!product) {
       return res.status(404).json({
@@ -255,9 +263,14 @@ router.get('/:slug', async (req, res, next) => {
 // Produits similaires (même catégorie)
 router.get('/:slug/related', async (req, res, next) => {
   try {
-    const product = await db.queryOne(`
-      SELECT id, category_id FROM products WHERE slug = ? OR id = ?
-    `, [req.params.slug, req.params.slug]);
+    const slugParam = req.params.slug;
+    const isNumeric = /^\d+$/.test(slugParam);
+    const query = isNumeric
+      ? 'SELECT id, category_id FROM products WHERE (slug = ? OR id = ?)'
+      : 'SELECT id, category_id FROM products WHERE slug = ?';
+    const params = isNumeric ? [slugParam, parseInt(slugParam, 10)] : [slugParam];
+
+    const product = await db.queryOne(query, params);
 
     if (!product) {
       return res.json({ success: true, products: [] });

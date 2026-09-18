@@ -17,8 +17,10 @@ export default function ProductCard({ product, onNavigate }) {
     showToast(`"${product.name}" a été ajouté à votre panier ✓`, 'success');
   };
 
+  const productUrl = `/product/${product.slug || product.id}`;
+
   const handleCardClick = () => {
-    onNavigate(`/product/${product.slug}`);
+    onNavigate(productUrl);
   };
 
   const imageSrc = product.primary_image || 'https://images.unsplash.com/photo-1590736969955-71cc94801759?w=600&q=80';
@@ -27,7 +29,16 @@ export default function ProductCard({ product, onNavigate }) {
     <div className="product-card" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
       {/* Photo & Badge Localisation */}
       <div className="product-image-wrap">
-        <img src={imageSrc} alt={product.name} loading="lazy" />
+        <a
+          href={productUrl}
+          onClick={(e) => {
+            e.preventDefault();
+            handleCardClick();
+          }}
+          style={{ display: 'block', width: '100%', height: '100%' }}
+        >
+          <img src={imageSrc} alt={product.name} loading="lazy" />
+        </a>
 
         <div className="product-badges">
           <span className="badge-location">📍 Dakar</span>
@@ -44,7 +55,16 @@ export default function ProductCard({ product, onNavigate }) {
         )}
 
         <h3 className="product-title" title={product.name}>
-          {product.name}
+          <a
+            href={productUrl}
+            onClick={(e) => {
+              e.preventDefault();
+              handleCardClick();
+            }}
+            className="product-title-anchor"
+          >
+            {product.name}
+          </a>
         </h3>
 
         {/* Note & Avis style Kahpoo */}
@@ -55,21 +75,44 @@ export default function ProductCard({ product, onNavigate }) {
           </span>
         </div>
 
-        {/* Prix Simple en FCFA (Sans réduction) */}
+        {/* Prix Simple en FCFA */}
         <div className="product-price-wrap">
           <span className="product-price">{formatPrice(product.price)}</span>
         </div>
 
-        {/* Bouton d'action unique : Ajouter au panier style Kahpoo */}
-        <div style={{ marginTop: '0.85rem' }}>
+        {/* Boutons d'action : Voir détail & Ajouter au panier */}
+        <div style={{ marginTop: '0.85rem', display: 'flex', gap: '0.5rem' }}>
           <button
-            className="btn btn-primary w-100"
+            type="button"
+            className="btn btn-primary"
             onClick={handleAddToCart}
             disabled={isOutOfStock}
             title="Ajouter au panier"
-            style={{ borderRadius: 'var(--radius-md)', fontWeight: 700, padding: '0.6rem 1rem' }}
+            style={{ flex: 1, borderRadius: 'var(--radius-md)', fontWeight: 700, padding: '0.6rem 0.75rem', fontSize: '0.88rem' }}
           >
-            {isOutOfStock ? 'Épuisé' : '🛒 Ajouter au panier'}
+            {isOutOfStock ? 'Épuisé' : '🛒 Ajouter'}
+          </button>
+
+          <button
+            type="button"
+            className="btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCardClick();
+            }}
+            title="Voir la fiche détaillée de ce produit"
+            style={{
+              background: 'var(--primary-light)',
+              color: 'var(--primary)',
+              border: '1px solid var(--primary)',
+              borderRadius: 'var(--radius-md)',
+              fontWeight: 700,
+              padding: '0.6rem 0.85rem',
+              fontSize: '0.88rem',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            Détails →
           </button>
         </div>
       </div>

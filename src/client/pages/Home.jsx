@@ -81,26 +81,60 @@ export default function Home({ onNavigate }) {
   return (
     <div style={{ background: '#f8f8fb', minHeight: '80vh' }}>
       <div className="container kahpoo-home-clean">
-        {/* 1. BARRE DE RECHERCHE PRINCIPALE KAHPOO (APP-SEARCH) */}
-        <div className="kahpoo-search-container">
-          <div className="kahpoo-search-wrapper">
-            <span className="kahpoo-search-icon">🔍</span>
+        {/* 1. VRAIE BARRE DE RECHERCHE PRINCIPALE VISIBLE & RAPIDE */}
+        <div className="main-search-hero">
+          <form
+            className="main-search-bar"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const el = document.getElementById('articles-list');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            <span className="search-bar-icon">🔎</span>
             <input
               type="text"
-              className="kahpoo-search-input"
-              placeholder="Rechercher des habits, sacs, chaussures, tissus, montres, bijoux..."
+              id="main-product-search"
+              className="search-bar-input"
+              placeholder="Rechercher un article (ex: robe, montre, sac, pagne, chaussure...)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
               <button
-                className="kahpoo-search-clear"
+                type="button"
+                className="search-bar-clear"
                 onClick={() => setSearchQuery('')}
                 title="Effacer la recherche"
+                aria-label="Effacer"
               >
                 ✕
               </button>
             )}
+            <button type="submit" className="search-bar-submit-btn" title="Lancer la recherche">
+              <span className="btn-text">Rechercher</span>
+              <span className="btn-icon">🔍</span>
+            </button>
+          </form>
+
+          {/* Suggestions rapides tendance */}
+          <div className="search-quick-tags">
+            <span className="quick-tags-label">🔥 Suggestions :</span>
+            {['Robes', 'Sacs', 'Montres', 'Bijoux', 'Bazin', 'Chaussures'].map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                className={`quick-tag-pill ${searchQuery.toLowerCase() === tag.toLowerCase() ? 'active' : ''}`}
+                onClick={() => {
+                  const newQ = searchQuery.toLowerCase() === tag.toLowerCase() ? '' : tag;
+                  setSearchQuery(newQ);
+                  const el = document.getElementById('articles-list');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                {tag}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -152,7 +186,7 @@ export default function Home({ onNavigate }) {
         </div>
 
         {/* 3. EN-TÊTE DE SECTION SIGNATURE AVEC DESSIN EN CONTOUR ASSORTI */}
-        <div className="kahpoo-section-box">
+        <div className="kahpoo-section-box" id="articles-list">
           <div className="kahpoo-section-box-left">
             <div
               className="kahpoo-section-icon-badge"
@@ -163,30 +197,21 @@ export default function Home({ onNavigate }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '4px'
+                padding: '4px',
+                flexShrink: 0
               }}
             >
               <CategoryDrawing slug={activeCategory} size={28} />
             </div>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <h1 className="kahpoo-section-title-clean">
                 {activeCategoryObj ? activeCategoryObj.name : 'Articles Disponibles à Dakar'}
               </h1>
             </div>
           </div>
 
-          <div style={{ textAlign: 'right' }}>
-            <span
-              style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                padding: '0.35rem 0.85rem',
-                borderRadius: '50px',
-                fontSize: '0.85rem',
-                fontWeight: 700,
-                color: 'var(--primary)'
-              }}
-            >
+          <div className="kahpoo-section-count-wrap">
+            <span className="kahpoo-section-count-badge">
               {filteredProducts.length} article{filteredProducts.length > 1 ? 's' : ''}
             </span>
           </div>
