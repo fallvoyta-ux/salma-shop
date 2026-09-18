@@ -74,6 +74,9 @@ function convertSqlForPg(sql) {
     .replace(/DATE\(\s*'now'\s*\)/gi, "CURRENT_DATE");
 
   if (/^INSERT\s+INTO\s+/i.test(trimmed) && !/\bRETURNING\b/i.test(trimmed)) {
+    if (/^INSERT\s+INTO\s+settings\b/i.test(trimmed)) {
+      return `${trimmed};`;
+    }
     return `${trimmed} RETURNING id;`;
   }
 
