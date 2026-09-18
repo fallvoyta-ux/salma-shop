@@ -110,11 +110,11 @@ export default function Checkout({ onNavigate }) {
         showToast('Commande enregistrée ! Redirection vers Global Business Services Grp SF...', 'success');
         clearCart();
 
-        // Si Wave sélectionné : copier automatiquement le numéro 78 340 48 39 (ou 77 201 86 97)
+        // Si Wave sélectionné : copier automatiquement le numéro 77 201 86 97
         if (paymentMethod === 'wave') {
           try {
             if (navigator.clipboard && navigator.clipboard.writeText) {
-              navigator.clipboard.writeText('78 340 48 39');
+              navigator.clipboard.writeText('77 201 86 97');
             }
           } catch (e) {
             console.warn('Erreur copie presse-papier:', e);
@@ -525,7 +525,7 @@ export default function Checkout({ onNavigate }) {
               </button>
 
               <div style={{ marginTop: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5, textAlign: 'center' }}>
-                ⚡ En validant, votre commande est enregistrée et transmise directement sur le WhatsApp officiel de <strong>Global Business Services Grp SF (+221 78 340 48 39)</strong>.
+                ⚡ En validant, votre commande est enregistrée et transmise directement sur le WhatsApp officiel de <strong>Global Business Services Grp SF (+221 77 201 86 97)</strong>.
               </div>
             </div>
           </div>

@@ -72,9 +72,8 @@ export default function About({ onNavigate }) {
               <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📞</div>
               <h4 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--dark)' }}>Nos Contacts Directs</h4>
               <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                💬 WhatsApp : <strong>+221 78 340 48 39</strong><br />
-                📱 Mobile : <strong>+221 76 251 11 12</strong><br />
-                📞 Wave / Service : <strong>+221 77 201 86 97</strong>
+                💬 WhatsApp & Wave : <strong>+221 77 201 86 97</strong><br />
+                📱 Mobile Direct : <strong>+221 76 251 11 12</strong>
               </p>
             </div>
           </div>

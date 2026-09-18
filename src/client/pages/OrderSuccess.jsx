@@ -39,8 +39,8 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
   const items = orderData ? orderData.items : [];
 
   // Liens de paiement direct
-  const whatsappPhone = (settings.store_whatsapp || '221783404839').replace(/[^0-9]/g, '');
-  const displayPhone = settings.store_phone || '+221 78 340 48 39';
+  const whatsappPhone = (settings.store_whatsapp || '221772018697').replace(/[^0-9]/g, '');
+  const displayPhone = settings.store_phone || '+221 77 201 86 97';
   const totalAmount = order ? order.total_amount : 0;
   const paymentMethod = order ? order.payment_method : 'wave';
 
@@ -172,13 +172,13 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                   Numéro Wave & WhatsApp Officiel
                 </div>
                 <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#0284c7', fontFamily: 'var(--font-heading)', letterSpacing: '2px', marginBottom: '4px' }}>
-                  78 340 48 39
+                  77 201 86 97
                 </div>
                 <div style={{ fontSize: '0.9rem', color: '#334155', fontWeight: 600, marginBottom: '0.5rem' }}>
                   Bénéficiaire : <strong>Global Business Services Grp SF</strong>
                 </div>
                 <div style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: '1.25rem' }}>
-                  Lignes secondaires Wave : <strong>77 201 86 97</strong> / <strong>76 251 11 12</strong>
+                  Ligne directe secondaire : <strong>76 251 11 12</strong>
                 </div>
 
                 <button
@@ -213,7 +213,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
               >
                 <div style={{ fontWeight: 800, marginBottom: '8px' }}>Comment valider votre commande :</div>
                 <div>1️⃣ Ouvrez votre application <strong>Wave</strong> sur votre téléphone.</div>
-                <div>2️⃣ Envoyez <strong>{formatPrice(totalAmount)}</strong> au <strong>78 340 48 39</strong> (ou 77 201 86 97).</div>
+                <div>2️⃣ Envoyez <strong>{formatPrice(totalAmount)}</strong> au <strong>77 201 86 97</strong>.</div>
                 <div>3️⃣ Cliquez sur le bouton vert ci-dessous pour nous envoyer votre capture de reçu sur WhatsApp !</div>
               </div>
 
@@ -302,10 +302,10 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                   Numéro Orange Money Officiel
                 </div>
                 <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#ea580c', fontFamily: 'var(--font-heading)', letterSpacing: '2px', marginBottom: '4px' }}>
-                  78 340 48 39
+                  77 201 86 97
                 </div>
                 <div style={{ fontSize: '0.9rem', color: '#334155', fontWeight: 600, marginBottom: '0.75rem' }}>
-                  Lignes secondaires : <strong>77 201 86 97</strong> / <strong>76 251 11 12</strong>
+                  Ligne secondaire : <strong>76 251 11 12</strong>
                 </div>
                 <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.25rem' }}>
                   Motif du transfert : <strong>{orderNumber}</strong>

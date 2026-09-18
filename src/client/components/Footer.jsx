@@ -95,7 +95,7 @@ export default function Footer({ onNavigate }) {
               <span className="footer-wa-icon">💬</span>
               <div className="footer-wa-text">
                 <span className="footer-wa-label">Commande Directe WhatsApp</span>
-                <span className="footer-wa-num">+221 78 340 48 39</span>
+                <span className="footer-wa-num">{settings.store_phone || '+221 77 201 86 97'}</span>
               </div>
             </a>
 
@@ -203,24 +203,16 @@ export default function Footer({ onNavigate }) {
               <div className="contact-row">
                 <span className="contact-icon">💬</span>
                 <div>
-                  <div className="contact-label">WhatsApp Principal</div>
-                  <a href="tel:+221783404839" className="contact-val highlight">+221 78 340 48 39</a>
+                  <div className="contact-label">WhatsApp & Wave</div>
+                  <a href={`https://wa.me/${(settings.store_whatsapp || '221772018697').replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className="contact-val highlight">{settings.store_phone || '+221 77 201 86 97'}</a>
                 </div>
               </div>
 
               <div className="contact-row">
                 <span className="contact-icon">📱</span>
                 <div>
-                  <div className="contact-label">Téléphone Mobile</div>
+                  <div className="contact-label">Téléphone Mobile Direct</div>
                   <a href="tel:+221762511112" className="contact-val highlight">+221 76 251 11 12</a>
-                </div>
-              </div>
-
-              <div className="contact-row">
-                <span className="contact-icon">📞</span>
-                <div>
-                  <div className="contact-label">Service & Wave</div>
-                  <a href="tel:+221772018697" className="contact-val highlight">+221 77 201 86 97</a>
                 </div>
               </div>
 

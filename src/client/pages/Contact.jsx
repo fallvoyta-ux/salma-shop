@@ -116,13 +116,10 @@ export default function Contact({ onNavigate }) {
                   <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', fontWeight: 700, marginBottom: '6px' }}>Nos Contacts Officiels :</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--dark)' }}>
-                      💬 <a href="https://wa.me/221783404839" target="_blank" rel="noreferrer" style={{ color: 'var(--success)' }}>+221 78 340 48 39</a> <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>(WhatsApp Principal)</span>
+                      💬 <a href="https://wa.me/221772018697" target="_blank" rel="noreferrer" style={{ color: 'var(--success)' }}>+221 77 201 86 97</a> <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>(WhatsApp & Wave Principal)</span>
                     </div>
                     <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--dark)' }}>
-                      📱 <a href="tel:+221762511112">+221 76 251 11 12</a> <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>(Mobile)</span>
-                    </div>
-                    <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--dark)' }}>
-                      📞 <a href="tel:+221772018697">+221 77 201 86 97</a> <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>(Service & Wave)</span>
+                      📱 <a href="tel:+221762511112">+221 76 251 11 12</a> <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>(Mobile Direct)</span>
                     </div>
                   </div>
                 </div>
@@ -152,7 +149,7 @@ export default function Contact({ onNavigate }) {
                   rel="noreferrer"
                   className="btn btn-whatsapp btn-block btn-lg"
                 >
-                  💬 Discuter sur WhatsApp (+221 78 340 48 39)
+                  💬 Discuter sur WhatsApp (+221 77 201 86 97)
                 </a>
               </div>
             </div>

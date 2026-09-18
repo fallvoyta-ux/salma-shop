@@ -9,9 +9,9 @@ export const notificationService = {
     
     let paymentText = order.payment_method ? order.payment_method.toUpperCase() : 'WAVE';
     if (order.payment_method === 'wave') {
-      paymentText = `🌊 WAVE (Transfert vers ${config.storePhone || '78 340 48 39'} / 77 201 86 97)`;
+      paymentText = `🌊 WAVE (Transfert vers ${config.storePhone || '+221 77 201 86 97'})`;
     } else if (order.payment_method === 'orange_money') {
-      paymentText = `🟠 ORANGE MONEY (Transfert vers ${config.storePhone || '78 340 48 39'} / 77 201 86 97)`;
+      paymentText = `🟠 ORANGE MONEY (Transfert vers ${config.storePhone || '+221 77 201 86 97'})`;
     } else if (order.payment_method === 'cash_on_delivery') {
       paymentText = '💵 PAIEMENT EN ESPÈCES À LA LIVRAISON';
     }

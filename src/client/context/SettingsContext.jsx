@@ -8,14 +8,13 @@ export function SettingsProvider({ children }) {
     store_subtitle: 'Groupe Salma Fall',
     store_slogan: 'La Qualité fait la Différence 💜🕊️🌹',
     store_description: 'Global Business Services Grp SF (Groupe Salma Fall) : Vente d’articles divers à Dakar. La Qualité fait la Différence.',
-    store_phone: '+221 78 340 48 39',
+    store_phone: '+221 77 201 86 97',
     store_phone_alt1: '+221 76 251 11 12',
-    store_phone_alt2: '+221 77 201 86 97',
-    store_whatsapp: '221783404839',
+    store_whatsapp: '221772018697',
     store_email: 'contact@salmashop.sn',
     store_address: 'Dakar, Sénégal',
     currency: 'FCFA',
-    announcement_bar: '✨ Global Business Services Grp SF • Groupe Salma Fall • La Qualité fait la Différence 💜🕊️🌹 | 📲 WhatsApp : +221 78 340 48 39 • 76 251 11 12 • 77 201 86 97',
+    announcement_bar: '✨ Global Business Services Grp SF • Groupe Salma Fall • La Qualité fait la Différence 💜🕊️🌹 | 📲 WhatsApp : +221 77 201 86 97 • 76 251 11 12',
     announcement_active: 'true',
     whatsapp_ordering_enabled: 'true',
     free_shipping_threshold: '40000',
@@ -48,7 +47,7 @@ export function SettingsProvider({ children }) {
   };
 
   const getWhatsAppUrl = (customText = '') => {
-    const phone = (settings.store_whatsapp || '221783404839').replace(/[^0-9]/g, '');
+    const phone = (settings.store_whatsapp || '221772018697').replace(/[^0-9]/g, '');
     const text = customText || `Bonjour Global Business Services Grp SF (Groupe Salma Fall) ! 👋 Je souhaite commander ou avoir des renseignements sur vos articles. 💜`;
     return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
   };

@@ -68,7 +68,7 @@ export const paymentService = {
         }
       }
 
-      instructions = `Transfert Wave de ${amount.toLocaleString('fr-FR')} FCFA vers ${config.storeName} (${config.storePhone} / 77 201 86 97).`;
+      instructions = `Transfert Wave de ${amount.toLocaleString('fr-FR')} FCFA vers ${config.storeName} (${config.storePhone}).`;
 
       await db.execute(`
         INSERT INTO payments (order_id, provider, transaction_id, amount, currency, status, raw_response)
