@@ -28,17 +28,49 @@ export default function Navbar({ currentPath, onNavigate }) {
 
   return (
     <>
-      {/* BANDEAU SUPÉRIEUR D'IDENTITÉ DES RAYONS DU GROUPE */}
-      <div className="top-brand-announcement">
-        <div className="container top-brand-container">
+      {/* BANDEAU SUPÉRIEUR DÉFILANT EN BOUCLE CONTINUE (TOURNE EN ROND) */}
+      <div className="top-brand-announcement" aria-label="Annonces officielles défilantes">
+        <div className="top-brand-marquee">
           <div className="top-brand-track">
-            <span className="top-brand-item gb-item">
-              <strong className="tb-brand">Global Business</strong> : Vente Articles Divers - Tous genres d'accessoires de Femmes 👩🧕 et Accessoires pour la maison 🏡
-            </span>
-            <span className="top-brand-divider">•</span>
-            <span className="top-brand-item sk-item">
-              <strong className="tb-brand">SALMA KIDS</strong> (Vente Jouets éducatifs et accessoires pour enfants 👦👶🧒👧)
-            </span>
+            {/* GROUPE 1 */}
+            <div className="top-brand-content">
+              <span className="top-brand-item gb-item">
+                <strong className="tb-brand">Global Business</strong> : Vente Articles Divers - Tous genres d'accessoires de Femmes 👩🧕 et Accessoires pour la maison 🏡
+              </span>
+              <span className="top-brand-divider">✦</span>
+              <span className="top-brand-item sk-item">
+                <strong className="tb-brand">SALMA KIDS</strong> (Vente Jouets éducatifs et accessoires pour enfants 👦👶🧒👧)
+              </span>
+              <span className="top-brand-divider">✦</span>
+              <span className="top-brand-item wa-item">
+                📲 WhatsApp & Wave : <strong>+221 77 201 86 97</strong> • <strong>76 251 11 12</strong>
+              </span>
+              <span className="top-brand-divider">✦</span>
+              <span className="top-brand-item slogan-item">
+                « La Qualité fait la Différence 💜🕊️🌹 »
+              </span>
+              <span className="top-brand-divider">✦</span>
+            </div>
+
+            {/* GROUPE 2 (CLONE PARFAIT POUR BOUCLE INFINIE CONTINUE) */}
+            <div className="top-brand-content" aria-hidden="true">
+              <span className="top-brand-item gb-item">
+                <strong className="tb-brand">Global Business</strong> : Vente Articles Divers - Tous genres d'accessoires de Femmes 👩🧕 et Accessoires pour la maison 🏡
+              </span>
+              <span className="top-brand-divider">✦</span>
+              <span className="top-brand-item sk-item">
+                <strong className="tb-brand">SALMA KIDS</strong> (Vente Jouets éducatifs et accessoires pour enfants 👦👶🧒👧)
+              </span>
+              <span className="top-brand-divider">✦</span>
+              <span className="top-brand-item wa-item">
+                📲 WhatsApp & Wave : <strong>+221 77 201 86 97</strong> • <strong>76 251 11 12</strong>
+              </span>
+              <span className="top-brand-divider">✦</span>
+              <span className="top-brand-item slogan-item">
+                « La Qualité fait la Différence 💜🕊️🌹 »
+              </span>
+              <span className="top-brand-divider">✦</span>
+            </div>
           </div>
         </div>
       </div>

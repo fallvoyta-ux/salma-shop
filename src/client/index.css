@@ -3392,76 +3392,107 @@ button, input, select, textarea {
 }
 
 /* =========================================================
-   BANDEAU SUPÉRIEUR HAUT : RAYONS & DIVISIONS OFFICIELLES
+   BANDEAU SUPÉRIEUR HAUT : DÉFILEMENT CONTINU (TOURNE EN ROND)
    ========================================================= */
 .top-brand-announcement {
-  background: linear-gradient(90deg, #4c1d95 0%, #6d28d9 40%, #7c3aed 70%, #5b21b6 100%);
+  background: linear-gradient(90deg, #4c1d95 0%, #6d28d9 35%, #7c3aed 70%, #5b21b6 100%);
   color: #ffffff;
   padding: 8px 0;
-  font-size: 0.82rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.84rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  overflow: hidden;
   position: relative;
   z-index: 50;
+  width: 100%;
 }
 
-.top-brand-container {
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.top-brand-container::-webkit-scrollbar {
-  display: none;
+.top-brand-marquee {
+  width: 100%;
+  overflow: hidden;
+  display: flex;
 }
 
 .top-brand-track {
   display: flex;
+  width: max-content;
+  flex-shrink: 0;
+  animation: marqueeLoop 30s linear infinite;
+  will-change: transform;
+}
+
+.top-brand-announcement:hover .top-brand-track {
+  animation-play-state: paused;
+}
+
+@keyframes marqueeLoop {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.top-brand-content {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 14px;
+  gap: 18px;
+  padding-right: 18px;
+  flex-shrink: 0;
   white-space: nowrap;
-  font-weight: 500;
-  letter-spacing: 0.2px;
 }
 
 .top-brand-item {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .top-brand-item .tb-brand {
   font-weight: 800;
-  color: #fbbf24;
   letter-spacing: 0.4px;
 }
 
 .top-brand-item.gb-item .tb-brand {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 1px 7px;
+  background: rgba(255, 255, 255, 0.22);
+  padding: 2px 8px;
   border-radius: 4px;
 }
 
 .top-brand-item.sk-item .tb-brand {
   color: #fef08a;
-  background: rgba(254, 240, 138, 0.2);
-  padding: 1px 7px;
+  background: rgba(254, 240, 138, 0.25);
+  padding: 2px 8px;
   border-radius: 4px;
 }
 
+.top-brand-item.wa-item {
+  color: #e0e7ff;
+}
+
+.top-brand-item.slogan-item {
+  color: #f5d0fe;
+  font-weight: 600;
+  font-style: italic;
+}
+
 .top-brand-divider {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.45);
   font-size: 0.75rem;
 }
 
-@media (max-width: 992px) {
-  .top-brand-track {
-    justify-content: flex-start;
-    padding: 0 8px;
+@media (max-width: 768px) {
+  .top-brand-announcement {
+    padding: 6px 0;
     font-size: 0.78rem;
   }
+
+  .top-brand-track {
+    animation-duration: 22s;
+  }
 }
+
 
 
 
