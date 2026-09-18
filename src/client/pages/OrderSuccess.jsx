@@ -46,19 +46,53 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
 
   const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
   const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isMobile = isAndroid || isIOS;
 
   const waveAppLink = isAndroid
-    ? 'intent:#Intent;package=com.wave.personal;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.wave.personal;end'
+    ? 'intent:#Intent;package=com.wave.personal;action=android.intent.action.VIEW;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.wave.personal;end'
     : 'wave://';
   const omUssdUrl = `tel:*144*1*1*${whatsappPhone}*${totalAmount}%23`;
 
-  // Lien WhatsApp direct
-  const whatsappMsg = `Bonjour ${settings.store_name || 'Global Business Services Grp SF'} ! 👋\n\n` +
-    `Je viens d'effectuer la commande *${orderNumber}* sur votre boutique en ligne.\n` +
-    `💰 Montant total : ${totalAmount.toLocaleString('fr-FR')} FCFA.\n` +
-    `💳 Moyen de paiement : ${paymentMethod.toUpperCase()}.\n` +
-    `Pouvez-vous me confirmer la réception et le délai de livraison ? Merci !`;
-  const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(whatsappMsg)}`;
+  // Détection auto_wave depuis l'URL pour ouverture directe sur mobile
+  const [autoWaveTriggered, setAutoWaveTriggered] = useState(false);
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    if ((searchParams.get('auto_wave') === '1' || searchParams.get('auto_wave') === 'true') && !autoWaveTriggered) {
+      setAutoWaveTriggered(true);
+      if (isMobile) {
+        const timer = setTimeout(() => {
+          window.location.href = waveAppLink;
+        }, 400);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [waveAppLink, isMobile, autoWaveTriggered]);
+
+  // Message WhatsApp d'envoi avec succès
+  const isMobileMoney = paymentMethod === 'wave' || paymentMethod === 'orange_money';
+  const whatsappMsg = isMobileMoney
+    ? `✅ *PAIEMENT ENVOYÉ AVEC SUCCÈS SUR WAVE (+221 77 201 86 97)*\n` +
+      `🛍️ *COMMANDE - GLOBAL BUSINESS SERVICES GRP SF*\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `📦 *N° Commande* : ${orderNumber}\n` +
+      `💰 *MONTANT ENVOYÉ* : ${totalAmount.toLocaleString('fr-FR')} FCFA\n` +
+      `📱 *Bénéficiaire Wave* : Salma Shop (+221 77 201 86 97)\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `👤 *Client* : ${order ? order.customer_name : 'Client'}\n` +
+      `📍 *Livraison* : ${order ? (order.delivery_city + ', ' + order.delivery_address) : 'Dakar'}\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `Bonjour Salma Shop / Global Business Services Grp SF ! 👋\n` +
+      `J'ai bien envoyé mon règlement de ${totalAmount.toLocaleString('fr-FR')} FCFA sur votre compte Wave (+221 77 201 86 97) avec succès. ✅\n` +
+      `Merci de me confirmer la bonne réception et de préparer ma livraison ! 💜🕊️🌹`
+    : `Bonjour ${settings.store_name || 'Global Business Services Grp SF'} ! 👋\n\n` +
+      `Je viens d'effectuer la commande *${orderNumber}* sur votre boutique en ligne.\n` +
+      `💰 Montant total : ${totalAmount.toLocaleString('fr-FR')} FCFA.\n` +
+      `💳 Moyen de paiement : ${paymentMethod.toUpperCase()}.\n` +
+      `Pouvez-vous me confirmer la réception et le délai de livraison ? Merci !`;
+
+  const finalWhatsappUrl = (orderData && orderData.whatsappUrl)
+    ? orderData.whatsappUrl
+    : `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(whatsappMsg)}`;
 
   const [copied, setCopied] = useState(false);
   const handleCopyNumber = () => {
@@ -131,8 +165,8 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
             N° de Commande : <span style={{ color: 'var(--primary)' }}>{orderNumber}</span>
           </div>
 
-          {/* SECTION DÉDIÉE PAIEMENT DIRECT SALMA SHOP */}
-          {paymentMethod === 'wave' && (
+          {/* SECTION DÉDIÉE PAIEMENT DIRECT SALMA SHOP (WAVE ET ORANGE MONEY) */}
+          {(paymentMethod === 'wave' || paymentMethod === 'orange_money') && (
             <div
               style={{
                 background: 'linear-gradient(135deg, #0284c7 0%, #00B2FE 100%)',
@@ -145,18 +179,18 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
               }}
             >
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.2)', padding: '4px 14px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 700, marginBottom: '1rem' }}>
-                🌊 PAIEMENT SÉCURISÉ WAVE SÉNÉGAL
+                🌊 PAIEMENT DIRECT SUR WAVE (+221 77 201 86 97)
               </div>
 
               <h2 style={{ fontSize: '1.65rem', color: '#fff', marginBottom: '0.5rem', fontWeight: 800 }}>
                 Montant à régler : {formatPrice(totalAmount)}
               </h2>
 
-              <p style={{ fontSize: '0.95rem', opacity: 0.95, maxWidth: '500px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
-                Effectuez votre transfert Wave directement vers le compte officiel de <strong>Global Business Services Grp SF</strong> :
+              <p style={{ fontSize: '0.95rem', opacity: 0.95, maxWidth: '520px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
+                Transférez votre règlement sur le compte Wave de <strong>Salma Shop (Global Business Services Grp SF)</strong> :
               </p>
 
-              {/* Carte Coordonnées Wave */}
+              {/* Carte Coordonnées Wave Salma Shop */}
               <div
                 style={{
                   background: '#fff',
@@ -164,7 +198,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                   padding: '1.5rem',
                   borderRadius: 'var(--radius-lg)',
                   margin: '0 auto 1.5rem',
-                  maxWidth: '420px',
+                  maxWidth: '430px',
                   boxShadow: '0 8px 25px rgba(0,0,0,0.12)'
                 }}
               >
@@ -174,8 +208,8 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                 <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#0284c7', fontFamily: 'var(--font-heading)', letterSpacing: '2px', marginBottom: '4px' }}>
                   77 201 86 97
                 </div>
-                <div style={{ fontSize: '0.9rem', color: '#334155', fontWeight: 600, marginBottom: '0.5rem' }}>
-                  Bénéficiaire : <strong>Global Business Services Grp SF</strong>
+                <div style={{ fontSize: '0.92rem', color: '#334155', fontWeight: 700, marginBottom: '0.35rem' }}>
+                  Bénéficiaire : <strong>Salma Shop / Global Business Services Grp SF</strong>
                 </div>
                 <div style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: '1.25rem' }}>
                   Ligne directe secondaire : <strong>76 251 11 12</strong>
@@ -194,7 +228,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                     padding: '0.75rem 1rem'
                   }}
                 >
-                  {copied ? '✓ Numéro copié !' : `📋 Copier le numéro (${displayPhone})`}
+                  {copied ? '✓ Numéro 77 201 86 97 copié !' : `📋 Copier le numéro (${displayPhone})`}
                 </button>
               </div>
 
@@ -204,20 +238,20 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                   background: 'rgba(255,255,255,0.15)',
                   borderRadius: 'var(--radius-md)',
                   padding: '1.25rem',
-                  maxWidth: '420px',
+                  maxWidth: '430px',
                   margin: '0 auto 1.5rem',
                   textAlign: 'left',
                   fontSize: '0.92rem',
                   lineHeight: 1.6
                 }}
               >
-                <div style={{ fontWeight: 800, marginBottom: '8px' }}>Comment valider votre commande :</div>
-                <div>1️⃣ Ouvrez votre application <strong>Wave</strong> sur votre téléphone.</div>
+                <div style={{ fontWeight: 800, marginBottom: '8px' }}>Instructions de validation :</div>
+                <div>1️⃣ Cliquez sur le bouton bleu ci-dessous pour ouvrir l'application <strong>Wave</strong>.</div>
                 <div>2️⃣ Envoyez <strong>{formatPrice(totalAmount)}</strong> au <strong>77 201 86 97</strong>.</div>
-                <div>3️⃣ Cliquez sur le bouton vert ci-dessous pour nous envoyer votre capture de reçu sur WhatsApp !</div>
+                <div>3️⃣ Cliquez sur le bouton vert pour envoyer votre <strong>message d'envoi avec succès</strong> sur WhatsApp (+221 77 201 86 97) !</div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxWidth: '420px', margin: '0 auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxWidth: '430px', margin: '0 auto' }}>
                 <a
                   href={waveAppLink}
                   onClick={() => handleCopyNumber()}
@@ -226,7 +260,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                     background: '#fff',
                     color: '#0284c7',
                     fontWeight: 900,
-                    fontSize: '1.1rem',
+                    fontSize: '1.05rem',
                     padding: '0.95rem 1.5rem',
                     borderRadius: 'var(--radius-md)',
                     display: 'inline-flex',
@@ -237,11 +271,11 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                     boxShadow: '0 6px 20px rgba(0,0,0,0.18)'
                   }}
                 >
-                  <span style={{ fontSize: '1.35rem' }}>🌊</span> Ouvrir l'application Wave sur mon mobile
+                  <span style={{ fontSize: '1.35rem' }}>🌊</span> Ouvrir l'application Wave de Salma Shop
                 </a>
 
                 <a
-                  href={whatsappUrl}
+                  href={finalWhatsappUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="btn btn-whatsapp btn-lg"
@@ -252,121 +286,26 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                     gap: '8px',
                     fontSize: '1.05rem',
                     fontWeight: 800,
-                    padding: '0.9rem 1.5rem',
+                    padding: '0.95rem 1.5rem',
                     boxShadow: '0 6px 20px rgba(37, 211, 102, 0.4)'
                   }}
                 >
-                  <span>💬</span> Envoyer mon reçu Wave sur WhatsApp
-                </a>
-              </div>
-            </div>
-          )}
-
-          {paymentMethod === 'orange_money' && (
-            <div
-              style={{
-                background: 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)',
-                color: '#fff',
-                padding: '2.25rem 2rem',
-                borderRadius: 'var(--radius-lg)',
-                boxShadow: '0 10px 30px rgba(249, 115, 22, 0.35)',
-                marginBottom: '2.5rem',
-                textAlign: 'center'
-              }}
-            >
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.2)', padding: '4px 14px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 700, marginBottom: '1rem' }}>
-                🟠 PAIEMENT ORANGE MONEY SÉNÉGAL
-              </div>
-
-              <h2 style={{ fontSize: '1.65rem', color: '#fff', marginBottom: '0.5rem', fontWeight: 800 }}>
-                Montant à régler : {formatPrice(totalAmount)}
-              </h2>
-
-              <p style={{ fontSize: '0.95rem', opacity: 0.95, maxWidth: '500px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
-                Transférez au compte Orange Money marchand officiel de <strong>Global Business Services Grp SF</strong> :
-              </p>
-
-              {/* Carte Coordonnées OM */}
-              <div
-                style={{
-                  background: '#fff',
-                  color: '#ea580c',
-                  padding: '1.5rem',
-                  borderRadius: 'var(--radius-lg)',
-                  margin: '0 auto 1.5rem',
-                  maxWidth: '420px',
-                  boxShadow: '0 8px 25px rgba(0,0,0,0.12)'
-                }}
-              >
-                <div style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>
-                  Numéro Orange Money Officiel
-                </div>
-                <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#ea580c', fontFamily: 'var(--font-heading)', letterSpacing: '2px', marginBottom: '4px' }}>
-                  77 201 86 97
-                </div>
-                <div style={{ fontSize: '0.9rem', color: '#334155', fontWeight: 600, marginBottom: '0.75rem' }}>
-                  Ligne secondaire : <strong>76 251 11 12</strong>
-                </div>
-                <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.25rem' }}>
-                  Motif du transfert : <strong>{orderNumber}</strong>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleCopyNumber}
-                  className="btn btn-primary btn-block"
-                  style={{
-                    background: '#ea580c',
-                    borderColor: '#ea580c',
-                    color: '#fff',
-                    fontWeight: 800,
-                    fontSize: '1rem',
-                    padding: '0.75rem 1rem'
-                  }}
-                >
-                  {copied ? '✓ Numéro copié !' : `📋 Copier le numéro (${displayPhone})`}
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxWidth: '420px', margin: '0 auto' }}>
-                <a
-                  href={omUssdUrl}
-                  className="btn btn-lg"
-                  style={{
-                    background: '#fff',
-                    color: '#ea580c',
-                    fontWeight: 800,
-                    fontSize: '1.05rem',
-                    boxShadow: '0 4px 15px rgba(0,0,0,0.15)',
-                    padding: '0.85rem 1.5rem',
-                    border: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <span>📞</span> Composer le code #144# sur mobile
+                  <span>💬</span> Envoyer le message d'envoi avec succès (+221 77 201 86 97)
                 </a>
 
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn btn-whatsapp btn-lg"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    fontSize: '1.05rem',
-                    fontWeight: 800,
-                    padding: '0.9rem 1.5rem',
-                    boxShadow: '0 6px 20px rgba(37, 211, 102, 0.4)'
-                  }}
-                >
-                  <span>💬</span> Confirmer le paiement OM sur WhatsApp
-                </a>
+                {paymentMethod === 'orange_money' && (
+                  <a
+                    href={omUssdUrl}
+                    style={{
+                      color: 'rgba(255,255,255,0.9)',
+                      fontSize: '0.82rem',
+                      textDecoration: 'underline',
+                      marginTop: '0.5rem'
+                    }}
+                  >
+                    Ou composer le code USSD Orange Money #144#
+                  </a>
+                )}
               </div>
             </div>
           )}
@@ -395,13 +334,13 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
           {/* Boutons d'action : WhatsApp et Impression */}
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2.5rem' }}>
             <a
-              href={whatsappUrl}
+              href={finalWhatsappUrl}
               target="_blank"
               rel="noreferrer"
               className="btn btn-whatsapp btn-lg"
               style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', fontWeight: 700 }}
             >
-              <span>💬</span> Confirmer ma commande sur WhatsApp
+              <span>💬</span> {isMobileMoney ? "Envoyer le message d'envoi avec succès sur WhatsApp (+221 77 201 86 97)" : "Confirmer ma commande sur WhatsApp"}
             </a>
 
             <button

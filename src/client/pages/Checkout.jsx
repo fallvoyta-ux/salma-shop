@@ -107,21 +107,41 @@ export default function Checkout({ onNavigate }) {
       const data = await res.json();
 
       if (data.success && data.order) {
-        showToast('Commande enregistrée ! Redirection vers Global Business Services Grp SF...', 'success');
         clearCart();
 
-        // Si Wave sélectionné : copier automatiquement le numéro 77 201 86 97
-        if (paymentMethod === 'wave') {
+        // Pour Wave et Orange Money : redirection directe vers le Wave de Salma Shop (+221 77 201 86 97)
+        if (paymentMethod === 'wave' || paymentMethod === 'orange_money') {
+          // 1. Copier le numéro Wave de Salma Shop dans le presse-papier
           try {
             if (navigator.clipboard && navigator.clipboard.writeText) {
-              navigator.clipboard.writeText('77 201 86 97');
+              await navigator.clipboard.writeText('77 201 86 97');
             }
           } catch (e) {
             console.warn('Erreur copie presse-papier:', e);
           }
+
+          showToast('✓ Commande enregistrée ! Numéro Wave (+221 77 201 86 97) copié. Ouverture de Wave...', 'success');
+
+          // 2. Détection mobile pour ouverture de l'application Wave
+          const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+          const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+          const waveAppLink = isAndroid
+            ? 'intent:#Intent;package=com.wave.personal;action=android.intent.action.VIEW;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.wave.personal;end'
+            : 'wave://';
+
+          // 3. Basculer vers la page de confirmation avec auto_wave
+          onNavigate(`/order-confirmation/${data.order.order_number}?auto_wave=1`);
+
+          // 4. Lancer immédiatement l'app Wave sur mobile
+          if (isAndroid || isIOS) {
+            setTimeout(() => {
+              window.location.href = waveAppLink;
+            }, 350);
+          }
+          return;
         }
 
-        // REDIRECTION DIRECTE SUR LE NUMÉRO DE SALMA SHOP (+221 77 201 86 97) VIA WHATSAPP
+        // Pour les paiements Cash ou autres : redirection directe vers WhatsApp
         if (data.whatsappUrl) {
           window.history.pushState({}, '', `/order-confirmation/${data.order.order_number}`);
           window.location.href = data.whatsappUrl;
@@ -347,7 +367,7 @@ export default function Checkout({ onNavigate }) {
                         <div style={{ fontWeight: 800, color: '#0369a1', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           🌊 Wave Sénégal
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Paiement instantané sans frais via votre compte Wave</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Redirection directe vers Wave Salma Shop (+221 77 201 86 97) & message avec succès</div>
                       </div>
                     </div>
                     <span style={{ background: 'var(--brand-wave)', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800 }}>WAVE</span>
@@ -375,9 +395,9 @@ export default function Checkout({ onNavigate }) {
                       />
                       <div>
                         <div style={{ fontWeight: 800, color: '#c2410c', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          🟠 Orange Money Sénégal
+                          🟠 Orange Money / Wave Sénégal
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Validation sécurisée par code USSD ou app Orange Money</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Redirection directe vers Wave Salma Shop (+221 77 201 86 97) & message avec succès</div>
                       </div>
                     </div>
                     <span style={{ background: 'var(--brand-om)', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800 }}>OM</span>
@@ -517,15 +537,19 @@ export default function Checkout({ onNavigate }) {
               >
                 {submitting ? 'Validation en cours...' : (
                   paymentMethod === 'wave'
-                    ? `🌊 Valider & Payer Wave (${formatPrice(grandTotal)})`
+                    ? `🌊 Valider & Ouvrir Wave Salma Shop (+221 77 201 86 97)`
                     : paymentMethod === 'orange_money'
-                    ? `🟠 Valider & Payer Orange Money (${formatPrice(grandTotal)})`
-                    : `📲 Valider & Envoyer Commande (${formatPrice(grandTotal)})`
+                    ? `🟠 Valider & Ouvrir Wave Salma Shop (+221 77 201 86 97)`
+                    : `📲 Valider & Confirmer Commande (${formatPrice(grandTotal)})`
                 )}
               </button>
 
               <div style={{ marginTop: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5, textAlign: 'center' }}>
-                ⚡ En validant, votre commande est enregistrée et transmise directement sur le WhatsApp officiel de <strong>Global Business Services Grp SF (+221 77 201 86 97)</strong>.
+                {(paymentMethod === 'wave' || paymentMethod === 'orange_money') ? (
+                  <span>⚡ En cliquant sur Valider, vous êtes directement dirigé vers l'application <strong>Wave de Salma Shop (+221 77 201 86 97)</strong> pour envoyer votre règlement, puis envoyer votre message de confirmation avec succès sur WhatsApp.</span>
+                ) : (
+                  <span>⚡ En validant, votre commande est enregistrée et transmise directement sur le WhatsApp officiel de <strong>Global Business Services Grp SF (+221 77 201 86 97)</strong>.</span>
+                )}
               </div>
             </div>
           </div>

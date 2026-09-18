@@ -5,7 +5,10 @@ export const notificationService = {
    * Génère le texte WhatsApp pour une nouvelle commande
    */
   generateOrderWhatsAppMessage(order, items = []) {
-    let itemsText = items.map(i => `• ${i.product_name || i.name || 'Article'} (x${i.quantity}) : ${(i.subtotal).toLocaleString('fr-FR')} FCFA`).join('\n');
+    const isMobileMoney = order.payment_method === 'wave' || order.payment_method === 'orange_money';
+    const itemsText = (items && items.length > 0)
+      ? items.map(i => `• ${i.product_name || i.name || 'Article'} (x${i.quantity}) : ${(i.subtotal || 0).toLocaleString('fr-FR')} FCFA`).join('\n')
+      : '• Commande Salma Shop';
     
     let paymentText = order.payment_method ? order.payment_method.toUpperCase() : 'WAVE';
     if (order.payment_method === 'wave') {
@@ -14,6 +17,27 @@ export const notificationService = {
       paymentText = `🟠 ORANGE MONEY (Transfert vers ${config.storePhone || '+221 77 201 86 97'})`;
     } else if (order.payment_method === 'cash_on_delivery') {
       paymentText = '💵 PAIEMENT EN ESPÈCES À LA LIVRAISON';
+    }
+
+    if (isMobileMoney) {
+      return `✅ *PAIEMENT ENVOYÉ AVEC SUCCÈS SUR WAVE (+221 77 201 86 97)*\n` +
+        `🛍️ *COMMANDE - GLOBAL BUSINESS SERVICES GRP SF*\n` +
+        `━━━━━━━━━━━━━━━━━━━\n` +
+        `📦 *N° Commande* : ${order.order_number}\n` +
+        `💰 *MONTANT ENVOYÉ* : ${(order.total_amount || 0).toLocaleString('fr-FR')} FCFA\n` +
+        `📱 *Bénéficiaire Wave* : Salma Shop (+221 77 201 86 97)\n` +
+        `━━━━━━━━━━━━━━━━━━━\n` +
+        `👤 *Client* : ${order.customer_name || 'Client'}\n` +
+        `📞 *Téléphone* : ${order.customer_phone || 'N/A'}\n` +
+        `📍 *Livraison* : ${order.delivery_city || 'Dakar'}, ${order.delivery_address || ''}\n` +
+        `💳 *Moyen sélectionné* : ${paymentText}\n` +
+        `━━━━━━━━━━━━━━━━━━━\n` +
+        `🛒 *Articles commandés* :\n${itemsText}\n\n` +
+        `🚚 *Frais de livraison* : ${(order.delivery_fee || 0).toLocaleString('fr-FR')} FCFA\n` +
+        `━━━━━━━━━━━━━━━━━━━\n` +
+        `Bonjour Salma Shop / Global Business Services Grp SF ! 👋\n` +
+        `J'ai bien envoyé mon règlement de ${(order.total_amount || 0).toLocaleString('fr-FR')} FCFA sur votre compte Wave (+221 77 201 86 97) avec succès. ✅\n` +
+        `Merci de me confirmer la bonne réception et de préparer ma livraison ! 💜🕊️🌹`;
     }
 
     return `🛍️ *COMMANDE - GLOBAL BUSINESS SERVICES GRP SF (${order.order_number})*\n` +

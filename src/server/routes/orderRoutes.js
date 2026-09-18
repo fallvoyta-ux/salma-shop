@@ -248,10 +248,13 @@ router.get('/track/:orderNumber', async (req, res, next) => {
       zone_name: order.zone_name
     };
 
+    const whatsappUrl = notificationService.getOrderWhatsAppUrl(safeOrder, items);
+
     res.json({
       success: true,
       order: safeOrder,
-      items
+      items,
+      whatsappUrl
     });
   } catch (err) {
     next(err);
