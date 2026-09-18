@@ -27,7 +27,23 @@ export default function Navbar({ currentPath, onNavigate }) {
   }, [userMenuOpen]);
 
   return (
-    <header className="kahpoo-header">
+    <>
+      {/* BANDEAU SUPÉRIEUR D'IDENTITÉ DES RAYONS DU GROUPE */}
+      <div className="top-brand-announcement">
+        <div className="container top-brand-container">
+          <div className="top-brand-track">
+            <span className="top-brand-item gb-item">
+              <strong className="tb-brand">Global Business</strong> : Vente Articles Divers - Tous genres d'accessoires de Femmes 👩🧕 et Accessoires pour la maison 🏡
+            </span>
+            <span className="top-brand-divider">•</span>
+            <span className="top-brand-item sk-item">
+              <strong className="tb-brand">SALMA KIDS</strong> (Vente Jouets éducatifs et accessoires pour enfants 👦👶🧒👧)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <header className="kahpoo-header">
       <div className="container">
         <div className="kahpoo-header-main" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
           {/* EXTRÊME GAUCHE : LOGO GLOBAL BUSINESS SERVICES GRP SF */}
@@ -211,5 +227,6 @@ export default function Navbar({ currentPath, onNavigate }) {
         </div>
       </div>
     </header>
+    </>
   );
 }

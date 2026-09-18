@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ProductCard from '../components/ProductCard';
 import CategoryDrawing, { getCategoryTheme } from '../components/CategoryDrawings';
 import AssuranceBanner from '../components/AssuranceBanner';
+import BusinessDivisions from '../components/BusinessDivisions';
 import { useSettings } from '../context/SettingsContext';
 
 export default function Home({ onNavigate }) {
@@ -78,6 +79,27 @@ export default function Home({ onNavigate }) {
 
   const activeCategoryObj = categories.find((c) => c.slug === activeCategory);
 
+  const handleSelectDivision = (division) => {
+    if (division === 'enfant') {
+      const kidCat = categories.find((c) => c.slug.includes('enfant') || c.slug.includes('bouteille'));
+      if (kidCat) {
+        setActiveCategory(kidCat.slug);
+        setSearchQuery('');
+      } else {
+        setSearchQuery('enfant');
+      }
+    } else if (division === 'femme') {
+      const womanCat = categories.find((c) => c.slug.includes('femme'));
+      if (womanCat) {
+        setActiveCategory(womanCat.slug);
+        setSearchQuery('');
+      } else {
+        setActiveCategory('');
+        setSearchQuery('');
+      }
+    }
+  };
+
   return (
     <div style={{ background: '#f8f8fb', minHeight: '80vh' }}>
       <div className="container kahpoo-home-clean">
@@ -137,6 +159,9 @@ export default function Home({ onNavigate }) {
             ))}
           </div>
         </div>
+
+        {/* DIVISIONS PRINCIPALES DU GROUPE : GLOBAL BUSINESS & SALMA KIDS */}
+        <BusinessDivisions onSelectDivision={handleSelectDivision} onNavigate={onNavigate} />
 
         {/* NOUVELLE BANNIÈRE ULTRA-MODERNISÉE : ASSURANCE TOUTES BRANCHES */}
         <AssuranceBanner />

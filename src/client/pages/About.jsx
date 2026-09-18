@@ -38,9 +38,30 @@ export default function About({ onNavigate }) {
           <p style={{ marginBottom: '1.5rem' }}>
             Bienvenue chez <strong>Global Business Services Grp SF (Groupe Salma Fall)</strong> ! Notre entreprise s’est imposée comme une référence incontournable avec une devise claire : <em>« La Qualité fait la Différence »</em>.
           </p>
-          <p style={{ marginBottom: '1.5rem' }}>
+          <p style={{ marginBottom: '2rem' }}>
             Nous sélectionnons pour vous les meilleurs articles divers – mode féminine chic, tenues de cérémonie, maroquinerie, accessoires tendance, chaussures et produits du quotidien – alliant excellence, élégance et prix accessibles.
           </p>
+
+          <h3 style={{ fontSize: '1.35rem', color: 'var(--dark)', marginBottom: '1.25rem' }}>Nos Rayons & Univers Spécialisés</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '2.5rem' }}>
+            <div style={{ background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)', border: '1.5px solid rgba(124, 58, 237, 0.25)', padding: '1.6rem', borderRadius: 'var(--radius-md)' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👩🧕 🏡</div>
+              <h4 style={{ fontSize: '1.2rem', color: '#5b21b6', marginBottom: '0.3rem', fontWeight: 800 }}>Global Business</h4>
+              <div style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.88rem', marginBottom: '0.6rem' }}>Vente Articles Divers</div>
+              <p style={{ fontSize: '0.92rem', color: '#334155', lineHeight: 1.6, fontWeight: 600 }}>
+                Tous genres d'accessoires de Femmes 👩🧕 et Accessoires pour la maison 🏡. Mode chic, sacs, bijoux raffinés et équipements pour votre intérieur.
+              </p>
+            </div>
+
+            <div style={{ background: 'linear-gradient(135deg, #ffffff 0%, #fffbf0 100%)', border: '1.5px solid rgba(245, 158, 11, 0.25)', padding: '1.6rem', borderRadius: 'var(--radius-md)' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👦👶🧒👧 🧸</div>
+              <h4 style={{ fontSize: '1.2rem', color: '#b45309', marginBottom: '0.3rem', fontWeight: 800 }}>SALMA KIDS</h4>
+              <div style={{ fontWeight: 700, color: '#d97706', fontSize: '0.88rem', marginBottom: '0.6rem' }}>Univers Enfants & Éveil</div>
+              <p style={{ fontSize: '0.92rem', color: '#334155', lineHeight: 1.6, fontWeight: 600 }}>
+                Vente Jouets éducatifs et accessoires pour enfants 👦👶🧒👧. Puzzles, jouets d'éveil, gourdes et cartables pour le bonheur des tout-petits.
+              </p>
+            </div>
+          </div>
 
           <h3 style={{ fontSize: '1.35rem', color: 'var(--dark)', marginBottom: '1rem' }}>Nos Engagements</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', margin: '2rem 0' }}>

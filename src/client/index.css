@@ -3198,3 +3198,270 @@ button, input, select, textarea {
   }
 }
 
+/* =========================================================
+   DIVISIONS D'ACTIVITÉ OFFICIELLES (GLOBAL BUSINESS & SALMA KIDS)
+   ========================================================= */
+.business-divisions-section {
+  margin: 1.5rem 0 2rem;
+}
+
+.divisions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.division-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 1.6rem;
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.division-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+.division-card.division-global-business {
+  background: linear-gradient(145deg, #ffffff 0%, #faf5ff 100%);
+  border-color: rgba(124, 58, 237, 0.22);
+}
+
+.division-card.division-global-business:hover {
+  border-color: #7c3aed;
+  box-shadow: 0 12px 32px rgba(124, 58, 237, 0.12);
+}
+
+.division-card.division-salma-kids {
+  background: linear-gradient(145deg, #ffffff 0%, #fffbf0 100%);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.division-card.division-salma-kids:hover {
+  border-color: #f59e0b;
+  box-shadow: 0 12px 32px rgba(245, 158, 11, 0.14);
+}
+
+.division-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ede9fe;
+  color: #6d28d9;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  margin-bottom: 1rem;
+  width: fit-content;
+}
+
+.division-badge.kids-badge {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.division-header {
+  margin-bottom: 0.6rem;
+}
+
+.division-title {
+  font-family: var(--font-heading);
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #5b21b6;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.division-title.kids-title {
+  color: #b45309;
+}
+
+.division-tagline {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #7c3aed;
+  display: block;
+}
+
+.division-tagline.kids-tagline {
+  color: #d97706;
+}
+
+.division-description {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #334155;
+  font-weight: 600;
+  margin-bottom: 1.1rem;
+}
+
+.division-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 1.4rem;
+}
+
+.feature-pill {
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.feature-pill.kids-pill {
+  background: #fffbeb;
+  color: #92400e;
+  border-color: #fde68a;
+}
+
+.division-footer {
+  margin-top: auto;
+}
+
+.division-action-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.15rem;
+  border-radius: var(--radius-md);
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.division-action-btn.btn-gb {
+  background: #7c3aed;
+  color: #ffffff;
+}
+
+.division-action-btn.btn-gb:hover {
+  background: #6d28d9;
+}
+
+.division-action-btn.btn-sk {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.division-action-btn.btn-sk:hover {
+  background: #d97706;
+}
+
+.division-action-btn .btn-arrow {
+  font-size: 1.1rem;
+  transition: transform 0.2s ease;
+}
+
+.division-card:hover .btn-arrow {
+  transform: translateX(4px);
+}
+
+@media (max-width: 768px) {
+  .divisions-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .division-card {
+    padding: 1.4rem 1.25rem;
+  }
+
+  .division-title {
+    font-size: 1.3rem;
+  }
+}
+
+/* =========================================================
+   BANDEAU SUPÉRIEUR HAUT : RAYONS & DIVISIONS OFFICIELLES
+   ========================================================= */
+.top-brand-announcement {
+  background: linear-gradient(90deg, #4c1d95 0%, #6d28d9 40%, #7c3aed 70%, #5b21b6 100%);
+  color: #ffffff;
+  padding: 8px 0;
+  font-size: 0.82rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  position: relative;
+  z-index: 50;
+}
+
+.top-brand-container {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.top-brand-container::-webkit-scrollbar {
+  display: none;
+}
+
+.top-brand-track {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  white-space: nowrap;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.top-brand-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.top-brand-item .tb-brand {
+  font-weight: 800;
+  color: #fbbf24;
+  letter-spacing: 0.4px;
+}
+
+.top-brand-item.gb-item .tb-brand {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 1px 7px;
+  border-radius: 4px;
+}
+
+.top-brand-item.sk-item .tb-brand {
+  color: #fef08a;
+  background: rgba(254, 240, 138, 0.2);
+  padding: 1px 7px;
+  border-radius: 4px;
+}
+
+.top-brand-divider {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+}
+
+@media (max-width: 992px) {
+  .top-brand-track {
+    justify-content: flex-start;
+    padding: 0 8px;
+    font-size: 0.78rem;
+  }
+}
+
+
+
