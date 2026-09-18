@@ -71,6 +71,19 @@ app.use('/api/delivery-zones', deliveryRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/admin', adminRoutes);
 
+// Endpoint pour exécuter ou diagnostiquer le seed de la base de données
+app.post('/api/seed', async (req, res) => {
+  try {
+    await initSchema();
+    await seedDatabase();
+    const count = await db.queryOne('SELECT COUNT(*) as count FROM products');
+    res.json({ success: true, message: 'Seed exécuté avec succès', productsCount: count ? count.count : 0 });
+  } catch (err) {
+    console.error('Erreur lors du seed API:', err);
+    res.status(500).json({ success: false, error: err.message, stack: err.stack });
+  }
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
