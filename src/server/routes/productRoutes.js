@@ -250,8 +250,8 @@ router.get('/:slug', async (req, res, next) => {
         ...product,
         images,
         reviews,
-        review_count: reviewStats ? reviewStats.review_count : 0,
-        average_rating: reviewStats && reviewStats.average_rating ? Number(reviewStats.average_rating.toFixed(1)) : 5.0,
+        review_count: reviewStats && reviewStats.review_count ? parseInt(reviewStats.review_count, 10) : 0,
+        average_rating: reviewStats && reviewStats.average_rating != null ? parseFloat(Number(reviewStats.average_rating).toFixed(1)) : 5.0,
         parsed_specifications: parsedSpecs
       }
     });
