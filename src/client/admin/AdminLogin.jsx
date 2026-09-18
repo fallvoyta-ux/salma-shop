@@ -47,15 +47,15 @@ export default function AdminLogin({ onNavigate }) {
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <img
             src="/logo.jpg"
-            alt="Salma Shop"
-            style={{ width: '88px', height: '88px', borderRadius: '50%', border: '3px solid var(--primary)', margin: '0 auto 1rem', boxShadow: '0 4px 20px var(--primary-glow)' }}
+            alt="Global Business Services Grp SF"
+            style={{ width: '88px', height: '88px', borderRadius: '50%', border: '3px solid var(--primary)', margin: '0 auto 1rem', boxShadow: '0 4px 20px var(--primary-glow)', objectFit: 'cover' }}
           />
-          <h1 style={{ fontSize: '1.65rem', color: '#fff', fontWeight: 800 }}>Salma Shop</h1>
-          <div style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.8rem', letterSpacing: '1px' }}>
-            CHIC LADIES • ADMINISTRATION
+          <h1 style={{ fontSize: '1.5rem', color: '#fff', fontWeight: 800 }}>Global Business Services</h1>
+          <div style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.82rem', letterSpacing: '1px', marginTop: '0.2rem' }}>
+            GRP SF • GROUPE SALMA FALL
           </div>
           <p style={{ color: '#94a3b8', fontSize: '0.82rem', marginTop: '0.5rem' }}>
-            Gestion commerciale, inventaire et commandes Dakar
+            « La Qualité fait la Différence 💜 » • Panneau d'Administration
           </p>
         </div>
 

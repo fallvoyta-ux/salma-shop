@@ -26,12 +26,12 @@ export default function AdminLayout({ currentPath, onNavigate, children }) {
         <div className="admin-sidebar-header">
           <img
             src="/logo.jpg"
-            alt="Salma Shop"
+            alt="Global Business Services Grp SF"
             style={{ width: '44px', height: '44px', borderRadius: '50%', border: '2px solid var(--primary)', objectFit: 'cover' }}
           />
           <div>
-            <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#fff' }}>SALMA SHOP</div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--primary)', fontWeight: 700 }}>CHIC LADIES ADMIN</div>
+            <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#fff', lineHeight: 1.2 }}>GLOBAL BUSINESS</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 700 }}>GRP SF • SALMA FALL</div>
           </div>
         </div>
 
@@ -80,7 +80,7 @@ export default function AdminLayout({ currentPath, onNavigate, children }) {
       <div className="admin-main">
         <header className="admin-header">
           <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--dark)' }}>
-            Salma Shop • CHIC LADIES • Panneau d'Administration
+            Global Business Services Grp SF • Groupe Salma Fall • Administration
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

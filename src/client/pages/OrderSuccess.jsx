@@ -39,8 +39,8 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
   const items = orderData ? orderData.items : [];
 
   // Liens de paiement direct
-  const whatsappPhone = (settings.store_whatsapp || '221772018697').replace(/[^0-9]/g, '');
-  const displayPhone = settings.store_phone || '+221 77 201 86 97';
+  const whatsappPhone = (settings.store_whatsapp || '221783404839').replace(/[^0-9]/g, '');
+  const displayPhone = settings.store_phone || '+221 78 340 48 39';
   const totalAmount = order ? order.total_amount : 0;
   const paymentMethod = order ? order.payment_method : 'wave';
 
@@ -53,7 +53,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
   const omUssdUrl = `tel:*144*1*1*${whatsappPhone}*${totalAmount}%23`;
 
   // Lien WhatsApp direct
-  const whatsappMsg = `Bonjour ${settings.store_name || 'Salma Shop'} ! 👋\n\n` +
+  const whatsappMsg = `Bonjour ${settings.store_name || 'Global Business Services Grp SF'} ! 👋\n\n` +
     `Je viens d'effectuer la commande *${orderNumber}* sur votre boutique en ligne.\n` +
     `💰 Montant total : ${totalAmount.toLocaleString('fr-FR')} FCFA.\n` +
     `💳 Moyen de paiement : ${paymentMethod.toUpperCase()}.\n` +
@@ -153,10 +153,10 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
               </h2>
 
               <p style={{ fontSize: '0.95rem', opacity: 0.95, maxWidth: '500px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
-                Effectuez votre transfert Wave directement vers le compte officiel de <strong>Salma Shop</strong> :
+                Effectuez votre transfert Wave directement vers le compte officiel de <strong>Global Business Services Grp SF</strong> :
               </p>
 
-              {/* Carte Coordonnées Wave Salma Shop */}
+              {/* Carte Coordonnées Wave */}
               <div
                 style={{
                   background: '#fff',
@@ -169,13 +169,16 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                 }}
               >
                 <div style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>
-                  Numéro Wave Salma Shop
+                  Numéro Wave & WhatsApp Officiel
                 </div>
                 <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#0284c7', fontFamily: 'var(--font-heading)', letterSpacing: '2px', marginBottom: '4px' }}>
-                  77 201 86 97
+                  78 340 48 39
                 </div>
-                <div style={{ fontSize: '0.9rem', color: '#334155', fontWeight: 600, marginBottom: '1.25rem' }}>
-                  Bénéficiaire : <strong>Salma Shop (Chic Ladies)</strong>
+                <div style={{ fontSize: '0.9rem', color: '#334155', fontWeight: 600, marginBottom: '0.5rem' }}>
+                  Bénéficiaire : <strong>Global Business Services Grp SF</strong>
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: '1.25rem' }}>
+                  Lignes secondaires Wave : <strong>77 201 86 97</strong> / <strong>76 251 11 12</strong>
                 </div>
 
                 <button
@@ -191,7 +194,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                     padding: '0.75rem 1rem'
                   }}
                 >
-                  {copied ? '✓ Numéro 77 201 86 97 copié !' : '📋 Copier le numéro (77 201 86 97)'}
+                  {copied ? '✓ Numéro copié !' : `📋 Copier le numéro (${displayPhone})`}
                 </button>
               </div>
 
@@ -210,7 +213,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
               >
                 <div style={{ fontWeight: 800, marginBottom: '8px' }}>Comment valider votre commande :</div>
                 <div>1️⃣ Ouvrez votre application <strong>Wave</strong> sur votre téléphone.</div>
-                <div>2️⃣ Envoyez <strong>{formatPrice(totalAmount)}</strong> au <strong>77 201 86 97</strong>.</div>
+                <div>2️⃣ Envoyez <strong>{formatPrice(totalAmount)}</strong> au <strong>78 340 48 39</strong> (ou 77 201 86 97).</div>
                 <div>3️⃣ Cliquez sur le bouton vert ci-dessous pour nous envoyer votre capture de reçu sur WhatsApp !</div>
               </div>
 
@@ -280,7 +283,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
               </h2>
 
               <p style={{ fontSize: '0.95rem', opacity: 0.95, maxWidth: '500px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
-                Transférez au compte Orange Money marchand officiel de <strong>Salma Shop</strong> :
+                Transférez au compte Orange Money marchand officiel de <strong>Global Business Services Grp SF</strong> :
               </p>
 
               {/* Carte Coordonnées OM */}
@@ -296,12 +299,15 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                 }}
               >
                 <div style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>
-                  Numéro Orange Money Salma Shop
+                  Numéro Orange Money Officiel
                 </div>
                 <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#ea580c', fontFamily: 'var(--font-heading)', letterSpacing: '2px', marginBottom: '4px' }}>
-                  77 201 86 97
+                  78 340 48 39
                 </div>
-                <div style={{ fontSize: '0.9rem', color: '#334155', fontWeight: 600, marginBottom: '1.25rem' }}>
+                <div style={{ fontSize: '0.9rem', color: '#334155', fontWeight: 600, marginBottom: '0.75rem' }}>
+                  Lignes secondaires : <strong>77 201 86 97</strong> / <strong>76 251 11 12</strong>
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.25rem' }}>
                   Motif du transfert : <strong>{orderNumber}</strong>
                 </div>
 
@@ -318,7 +324,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                     padding: '0.75rem 1rem'
                   }}
                 >
-                  {copied ? '✓ Numéro 77 201 86 97 copié !' : '📋 Copier le numéro (77 201 86 97)'}
+                  {copied ? '✓ Numéro copié !' : `📋 Copier le numéro (${displayPhone})`}
                 </button>
               </div>
 
@@ -470,7 +476,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
 
           <div style={{ marginTop: '2.5rem' }}>
             <button className="btn btn-outline" onClick={() => onNavigate('/shop')}>
-              Continuer mon shopping sur Salma Shop
+              Continuer mon shopping sur Global Business Services Grp SF
             </button>
           </div>
         </div>

@@ -347,7 +347,7 @@ export default function ProductDetail({ slug, onNavigate }) {
                 <span className="share-box-title">Partager cet article sur les réseaux :</span>
                 <div className="share-box-buttons">
                   <a
-                    href={`https://wa.me/?text=${encodeURIComponent(`Regarde cette merveille sur Salma Shop Dakar : *${product.name}* (${formatPrice(currentPrice)}) ✨ 👉 ${window.location.href}`)}`}
+                    href={`https://wa.me/?text=${encodeURIComponent(`Regarde cette merveille sur ${settings.store_name || 'Global Business Services Grp SF'} : *${product.name}* (${formatPrice(currentPrice)}) ✨ 👉 ${window.location.href}`)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="share-pill whatsapp"

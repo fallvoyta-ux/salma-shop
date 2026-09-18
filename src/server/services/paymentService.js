@@ -68,7 +68,7 @@ export const paymentService = {
         }
       }
 
-      instructions = `Transfert Wave de ${amount.toLocaleString('fr-FR')} FCFA vers Salma Shop (${config.storePhone}).`;
+      instructions = `Transfert Wave de ${amount.toLocaleString('fr-FR')} FCFA vers ${config.storeName} (${config.storePhone} / 77 201 86 97).`;
 
       db.execute(`
         INSERT INTO payments (order_id, provider, transaction_id, amount, currency, status, raw_response)
@@ -100,7 +100,7 @@ export const paymentService = {
         // En mode réel avec l'API Orange Money Web Payment
         instructions = `Validez votre paiement de ${amount.toLocaleString('fr-FR')} FCFA sur votre téléphone Orange Money (#144# ou application Orange Money).`;
       } else {
-        instructions = `Composer le code USSD ${ussdCode} ou transférer ${amount.toLocaleString('fr-FR')} FCFA au ${config.storePhone} (Salma Shop).`;
+        instructions = `Composer le code USSD ${ussdCode} ou transférer ${amount.toLocaleString('fr-FR')} FCFA au ${config.storePhone} (${config.storeName}).`;
       }
 
       db.execute(`

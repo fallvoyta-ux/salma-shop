@@ -9,14 +9,14 @@ export const notificationService = {
     
     let paymentText = order.payment_method ? order.payment_method.toUpperCase() : 'WAVE';
     if (order.payment_method === 'wave') {
-      paymentText = '🌊 WAVE (Transfert vers 77 201 86 97)';
+      paymentText = `🌊 WAVE (Transfert vers ${config.storePhone || '78 340 48 39'} / 77 201 86 97)`;
     } else if (order.payment_method === 'orange_money') {
-      paymentText = '🟠 ORANGE MONEY (Transfert vers 77 201 86 97)';
+      paymentText = `🟠 ORANGE MONEY (Transfert vers ${config.storePhone || '78 340 48 39'} / 77 201 86 97)`;
     } else if (order.payment_method === 'cash_on_delivery') {
       paymentText = '💵 PAIEMENT EN ESPÈCES À LA LIVRAISON';
     }
 
-    return `🛍️ *COMMANDE SALMA SHOP (${order.order_number})*\n` +
+    return `🛍️ *COMMANDE - GLOBAL BUSINESS SERVICES GRP SF (${order.order_number})*\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `👤 *Client* : ${order.customer_name}\n` +
       `📞 *Téléphone* : ${order.customer_phone}\n` +
@@ -27,7 +27,7 @@ export const notificationService = {
       `🚚 *Livraison* : ${(order.delivery_fee).toLocaleString('fr-FR')} FCFA\n` +
       `💰 *TOTAL À PAYER* : ${(order.total_amount).toLocaleString('fr-FR')} FCFA\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
-      `Bonjour Salma Shop ! 👋 Je viens de valider cette commande sur votre boutique en ligne. Merci de me confirmer la livraison ! 🌹`;
+      `Bonjour Global Business Services Grp SF (Groupe Salma Fall) ! 👋 Je viens de valider cette commande sur votre boutique en ligne. La Qualité fait la Différence ! 💜🕊️🌹`;
   },
 
   /**

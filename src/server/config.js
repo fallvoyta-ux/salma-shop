@@ -17,12 +17,14 @@ export const config = {
   dbFilePath: path.resolve(rootDir, process.env.DB_FILE_PATH || 'database.sqlite'),
   uploadsDir: path.resolve(rootDir, 'uploads'),
   
-  // Identité Officielle Salma Shop - Chic Ladies
-  storeName: process.env.STORE_NAME || 'Salma Shop',
-  storeSubtitle: 'Chic Ladies',
-  storeSlogan: 'Se vêtir à tous prix 💜 | S’habiller selon son Budget 🌹',
-  storePhone: process.env.STORE_PHONE || '+221 77 201 86 97',
-  storeWhatsApp: process.env.STORE_WHATSAPP || '221772018697',
+  // Identité Officielle Global Business Services Grp SF (Groupe Salma Fall)
+  storeName: process.env.STORE_NAME || 'Global Business Services Grp SF',
+  storeSubtitle: 'Groupe Salma Fall - Vente Articles Divers',
+  storeSlogan: 'La Qualité fait la Différence 💜🕊️🌹',
+  storePhone: process.env.STORE_PHONE || '+221 78 340 48 39',
+  storePhoneAlt1: '+221 76 251 11 12',
+  storePhoneAlt2: '+221 77 201 86 97',
+  storeWhatsApp: process.env.STORE_WHATSAPP || '221783404839',
   storeEmail: process.env.STORE_EMAIL || 'contact@salmashop.sn',
   storeAddress: process.env.STORE_ADDRESS || 'Dakar, Sénégal',
   defaultCurrency: process.env.DEFAULT_CURRENCY || 'FCFA',

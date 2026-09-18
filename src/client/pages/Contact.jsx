@@ -23,9 +23,9 @@ export default function Contact({ onNavigate }) {
       <div className="container">
         <div className="section-header">
           <span className="section-tag">Restons en Contact</span>
-          <h1 className="section-title">Contactez Salma Shop</h1>
+          <h1 className="section-title">Contactez Global Business Services Grp SF</h1>
           <p className="section-desc">
-            CHIC LADIES • Vente Articles Divers • Dakar, Sénégal
+            Groupe Salma Fall • Vente Articles Divers • « La Qualité fait la Différence 💜🕊️🌹 »
           </p>
         </div>
 
@@ -104,25 +104,33 @@ export default function Contact({ onNavigate }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             <div style={{ background: '#fff', padding: '2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                <img src="/logo.jpg" alt="" style={{ width: '60px', height: '60px', borderRadius: '50%', border: '2px solid var(--primary)' }} />
+                <img src="/logo.jpg" alt="Global Business Services Grp SF" style={{ width: '65px', height: '65px', borderRadius: '50%', border: '2px solid var(--primary)', objectFit: 'cover' }} />
                 <div>
-                  <h3 style={{ fontSize: '1.25rem', color: 'var(--dark)' }}>Salma Shop</h3>
-                  <div style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.8rem' }}>CHIC LADIES</div>
+                  <h3 style={{ fontSize: '1.15rem', color: 'var(--dark)' }}>Global Business Services</h3>
+                  <div style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.8rem' }}>GRP SF • GROUPE SALMA FALL</div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', fontSize: '0.95rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '0.95rem' }}>
                 <div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', fontWeight: 700 }}>Téléphone & WhatsApp Officiel :</div>
-                  <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--dark)' }}>
-                    📞 <a href="tel:+221772018697">+221 77 201 86 97</a>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', fontWeight: 700, marginBottom: '6px' }}>Nos Contacts Officiels :</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--dark)' }}>
+                      💬 <a href="https://wa.me/221783404839" target="_blank" rel="noreferrer" style={{ color: 'var(--success)' }}>+221 78 340 48 39</a> <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>(WhatsApp Principal)</span>
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--dark)' }}>
+                      📱 <a href="tel:+221762511112">+221 76 251 11 12</a> <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>(Mobile)</span>
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--dark)' }}>
+                      📞 <a href="tel:+221772018697">+221 77 201 86 97</a> <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>(Service & Wave)</span>
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', fontWeight: 700 }}>Slogans :</div>
-                  <div style={{ fontWeight: 600, color: '#e11d48' }}>💜 Se vêtir à tous prix</div>
-                  <div style={{ fontWeight: 600, color: '#e11d48' }}>🌹 S'habiller selon son Budget</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', fontWeight: 700 }}>Devise & Slogan :</div>
+                  <div style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '1.05rem' }}>💜 La Qualité fait la Différence</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.85rem' }}>Vente Articles Divers • Groupe Salma Fall 🕊️🌹</div>
                 </div>
 
                 <div>
@@ -139,12 +147,12 @@ export default function Contact({ onNavigate }) {
 
               <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
                 <a
-                  href={getWhatsAppUrl("Bonjour Salma Shop Chic Ladies ! J'aimerais échanger avec vous directement.")}
+                  href={getWhatsAppUrl("Bonjour Global Business Services Grp SF ! J'aimerais échanger avec vous directement.")}
                   target="_blank"
                   rel="noreferrer"
                   className="btn btn-whatsapp btn-block btn-lg"
                 >
-                  💬 Discuter sur WhatsApp (+221 77 201 86 97)
+                  💬 Discuter sur WhatsApp (+221 78 340 48 39)
                 </a>
               </div>
             </div>

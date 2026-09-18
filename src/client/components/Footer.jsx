@@ -70,16 +70,16 @@ export default function Footer({ onNavigate }) {
           {/* Colonne 1 : Marque & Slogan & WhatsApp */}
           <div className="footer-col-brand">
             <a href="/" onClick={(e) => { e.preventDefault(); onNavigate('/'); }} className="footer-brand-logo">
-              <img src="/logo.jpg" alt="Salma Shop" className="footer-logo-img" />
+              <img src="/logo.jpg" alt="Global Business Services Grp SF" className="footer-logo-img" />
               <div>
-                <span className="footer-brand-title">Salma Shop</span>
-                <span className="footer-brand-subtitle">CHIC LADIES • DAKAR</span>
+                <span className="footer-brand-title">Global Business Services</span>
+                <span className="footer-brand-subtitle">GRP SF • GROUPE SALMA FALL</span>
               </div>
             </a>
 
             <div className="footer-slogan-card">
-              <div className="slogan-line">« Se vêtir à tous prix 💜 »</div>
-              <div className="slogan-line">« S’habiller selon son Budget 🌹 »</div>
+              <div className="slogan-line">« La Qualité fait la Différence 💜 »</div>
+              <div className="slogan-line">« Groupe Salma Fall 🕊️🌹 »</div>
             </div>
 
             <p className="footer-about-text">
@@ -95,7 +95,7 @@ export default function Footer({ onNavigate }) {
               <span className="footer-wa-icon">💬</span>
               <div className="footer-wa-text">
                 <span className="footer-wa-label">Commande Directe WhatsApp</span>
-                <span className="footer-wa-num">+221 77 201 86 97</span>
+                <span className="footer-wa-num">+221 78 340 48 39</span>
               </div>
             </a>
 
@@ -181,7 +181,7 @@ export default function Footer({ onNavigate }) {
             <ul className="footer-links-list">
               <li><a href="/track-order" onClick={(e) => { e.preventDefault(); onNavigate('/track-order'); }}>📦 Suivre ma Commande</a></li>
               <li><a href="/account" onClick={(e) => { e.preventDefault(); onNavigate('/account'); }}>👤 Mon Espace Client</a></li>
-              <li><a href="/about" onClick={(e) => { e.preventDefault(); onNavigate('/about'); }}>ℹ️ À Propos de Salma Shop</a></li>
+              <li><a href="/about" onClick={(e) => { e.preventDefault(); onNavigate('/about'); }}>ℹ️ À Propos de l'Entreprise</a></li>
               <li><a href="/contact" onClick={(e) => { e.preventDefault(); onNavigate('/contact'); }}>📞 Contactez-nous</a></li>
               <li><a href="/terms" onClick={(e) => { e.preventDefault(); onNavigate('/terms'); }}>📜 Conditions de Vente</a></li>
               <li><a href="/privacy" onClick={(e) => { e.preventDefault(); onNavigate('/privacy'); }}>🔒 Confidentialité</a></li>
@@ -201,9 +201,25 @@ export default function Footer({ onNavigate }) {
               </div>
 
               <div className="contact-row">
+                <span className="contact-icon">💬</span>
+                <div>
+                  <div className="contact-label">WhatsApp Principal</div>
+                  <a href="tel:+221783404839" className="contact-val highlight">+221 78 340 48 39</a>
+                </div>
+              </div>
+
+              <div className="contact-row">
+                <span className="contact-icon">📱</span>
+                <div>
+                  <div className="contact-label">Téléphone Mobile</div>
+                  <a href="tel:+221762511112" className="contact-val highlight">+221 76 251 11 12</a>
+                </div>
+              </div>
+
+              <div className="contact-row">
                 <span className="contact-icon">📞</span>
                 <div>
-                  <div className="contact-label">Téléphone Direct</div>
+                  <div className="contact-label">Service & Wave</div>
                   <a href="tel:+221772018697" className="contact-val highlight">+221 77 201 86 97</a>
                 </div>
               </div>
@@ -242,7 +258,7 @@ export default function Footer({ onNavigate }) {
       <div className="footer-bottom-bar">
         <div className="container footer-bottom-flex">
           <div className="footer-copyright">
-            &copy; {new Date().getFullYear()} <strong>Salma Shop</strong> (Chic Ladies). Vente Articles Divers à Dakar 🇸🇳 • Tous droits réservés.
+            &copy; {new Date().getFullYear()} <strong>Global Business Services Grp SF</strong> (Groupe Salma Fall) • Vente Articles Divers 🇸🇳 • Tous droits réservés.
           </div>
           <div className="footer-legal-links">
             <a href="/terms" onClick={(e) => { e.preventDefault(); onNavigate('/terms'); }}>CGV</a>

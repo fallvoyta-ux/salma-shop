@@ -4,17 +4,17 @@
    ========================================================= */
 
 :root {
-  /* Palette Salma Shop Chic Ladies (Rose du Logo) */
-  --primary: #f43f5e;          /* Rose Corail Signature Robe Salma Shop */
-  --primary-hover: #e11d48;
-  --primary-dark: #be123c;
-  --primary-light: #fff1f2;
-  --primary-glow: rgba(244, 63, 94, 0.25);
+  /* Palette Global Business Services Grp SF (Violet & Lilas du Logo) */
+  --primary: #7c3aed;          /* Violet Royal Signature Logo */
+  --primary-hover: #6d28d9;    /* Violet Profond */
+  --primary-dark: #5b21b6;     /* Violet Sombre */
+  --primary-light: #f5f3ff;    /* Lilas / Lavande Très Doux */
+  --primary-glow: rgba(124, 58, 237, 0.25);
 
-  /* Accents Salma Shop */
-  --accent-rose: #f43f5e;      /* Rose Corail Robe Salma & Promos 🌹 */
-  --accent-rose-light: #ffe4e6;
-  --accent-purple: #8b5cf6;    /* Violet Chic Slogan 💜 */
+  /* Accents Violet & Lilas */
+  --accent-rose: #8b5cf6;      /* Violet Améthyste */
+  --accent-rose-light: #ede9fe;
+  --accent-purple: #7c3aed;    /* Violet Royal */
   --accent-purple-light: #ede9fe;
   --accent-teal: #06b6d4;      /* Turquoise Sac de Shopping tenu par la silhouette */
   --accent-teal-light: #cffafe;
@@ -210,7 +210,7 @@ button, input, select, textarea {
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #fb7185 0%, #be123c 100%);
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
   box-shadow: 0 6px 20px var(--primary-glow);
   color: #fff;
 }
@@ -807,7 +807,7 @@ button, input, select, textarea {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), #db2777);
+  background: linear-gradient(135deg, var(--primary), #9333ea);
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -919,14 +919,14 @@ button, input, select, textarea {
   display: block;
   width: 100%;
   text-align: center;
-  background: linear-gradient(135deg, var(--primary), #e11d48);
+  background: linear-gradient(135deg, var(--primary), #6d28d9);
   color: #ffffff !important;
   font-weight: 700;
   font-size: 0.9rem;
   padding: 0.65rem 1rem;
   border-radius: 50px;
   text-decoration: none;
-  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
   transition: all 0.2s ease;
   margin-bottom: 0.75rem;
 }
@@ -1564,7 +1564,7 @@ button, input, select, textarea {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--primary), #fb7185, transparent);
+  background: linear-gradient(90deg, transparent, var(--primary), #a78bfa, transparent);
 }
 
 /* 1. Bandeau de Réassurance */
@@ -2304,13 +2304,13 @@ button, input, select, textarea {
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #f43f5e 0%, #fb7185 100%);
+  background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
   color: #ffffff;
   font-size: 1.4rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.25);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
 }
 
 .kahpoo-section-title-clean {

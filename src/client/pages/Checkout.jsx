@@ -107,14 +107,14 @@ export default function Checkout({ onNavigate }) {
       const data = await res.json();
 
       if (data.success && data.order) {
-        showToast('Commande enregistrée ! Redirection vers Salma Shop...', 'success');
+        showToast('Commande enregistrée ! Redirection vers Global Business Services Grp SF...', 'success');
         clearCart();
 
-        // Si Wave sélectionné : copier automatiquement le numéro 77 201 86 97
+        // Si Wave sélectionné : copier automatiquement le numéro 78 340 48 39 (ou 77 201 86 97)
         if (paymentMethod === 'wave') {
           try {
             if (navigator.clipboard && navigator.clipboard.writeText) {
-              navigator.clipboard.writeText('77 201 86 97');
+              navigator.clipboard.writeText('78 340 48 39');
             }
           } catch (e) {
             console.warn('Erreur copie presse-papier:', e);
@@ -517,15 +517,15 @@ export default function Checkout({ onNavigate }) {
               >
                 {submitting ? 'Validation en cours...' : (
                   paymentMethod === 'wave'
-                    ? `🌊 Valider & Envoyer au +221 77 201 86 97 (${formatPrice(grandTotal)})`
+                    ? `🌊 Valider & Payer Wave (${formatPrice(grandTotal)})`
                     : paymentMethod === 'orange_money'
-                    ? `🟠 Valider & Envoyer au +221 77 201 86 97 (${formatPrice(grandTotal)})`
-                    : `📲 Valider & Envoyer à Salma Shop (${formatPrice(grandTotal)})`
+                    ? `🟠 Valider & Payer Orange Money (${formatPrice(grandTotal)})`
+                    : `📲 Valider & Envoyer Commande (${formatPrice(grandTotal)})`
                 )}
               </button>
 
               <div style={{ marginTop: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5, textAlign: 'center' }}>
-                ⚡ En validant, votre commande est enregistrée et transmise directement sur le WhatsApp de <strong>Salma Shop (+221 77 201 86 97)</strong>.
+                ⚡ En validant, votre commande est enregistrée et transmise directement sur le WhatsApp officiel de <strong>Global Business Services Grp SF (+221 78 340 48 39)</strong>.
               </div>
             </div>
           </div>

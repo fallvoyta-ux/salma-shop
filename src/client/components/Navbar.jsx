@@ -30,7 +30,7 @@ export default function Navbar({ currentPath, onNavigate }) {
     <header className="kahpoo-header">
       <div className="container">
         <div className="kahpoo-header-main" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          {/* EXTRÊME GAUCHE : LOGO SALMA SHOP */}
+          {/* EXTRÊME GAUCHE : LOGO GLOBAL BUSINESS SERVICES GRP SF */}
           <a
             href="/"
             onClick={(e) => { e.preventDefault(); onNavigate('/'); }}
@@ -38,12 +38,12 @@ export default function Navbar({ currentPath, onNavigate }) {
           >
             <img
               src="/logo.jpg"
-              alt="Salma Shop Chic Ladies"
+              alt="Global Business Services Grp SF"
               className="kahpoo-logo-img"
             />
             <div className="kahpoo-logo-text">
-              <span className="kahpoo-brand-name">Salma Shop</span>
-              <span className="kahpoo-brand-sub">CHIC LADIES</span>
+              <span className="kahpoo-brand-name">Global Business Services</span>
+              <span className="kahpoo-brand-sub">GRP SF • GROUPE SALMA FALL</span>
             </div>
           </a>
 
@@ -164,8 +164,8 @@ export default function Navbar({ currentPath, onNavigate }) {
                   ) : (
                     <div className="dropdown-guest-box">
                       <div className="dropdown-guest-welcome">
-                        <div className="guest-welcome-title">Bienvenue sur Salma Shop ✨</div>
-                        <div className="guest-welcome-sub">Connectez-vous pour suivre vos commandes à Dakar.</div>
+                        <div className="guest-welcome-title">Bienvenue sur GBS Grp SF ✨</div>
+                        <div className="guest-welcome-sub">Groupe Salma Fall • La Qualité fait la Différence.</div>
                       </div>
 
                       <a

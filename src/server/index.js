@@ -112,7 +112,7 @@ app.use(errorHandler);
 // Démarrage du serveur et initialisation automatique si nécessaire
 app.listen(config.port, '0.0.0.0', async () => {
   console.log(`\n======================================================`);
-  console.log(`🚀 SALMA SHOP - CHIC LADIES DAKAR (Serveur Démarré)`);
+  console.log(`🚀 GLOBAL BUSINESS SERVICES GRP SF - GROUPE SALMA FALL`);
   console.log(`🌐 URL : http://localhost:${config.port}`);
   console.log(`💳 Mode Paiement : [${config.paymentMode.toUpperCase()}]`);
   console.log(`======================================================\n`);

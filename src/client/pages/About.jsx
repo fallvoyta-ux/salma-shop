@@ -9,65 +9,72 @@ export default function About({ onNavigate }) {
       <div className="container container-narrow">
         <div className="section-header">
           <span className="section-tag">Notre Mission</span>
-          <h1 className="section-title">À Propos de Salma Shop</h1>
+          <h1 className="section-title">À Propos de Global Business Services Grp SF</h1>
           <p className="section-desc" style={{ fontStyle: 'italic', fontWeight: 600, color: 'var(--primary)' }}>
-            « Se vêtir à tous prix 💜 | S'habiller selon son Budget 🌹 »
+            « La Qualité fait la Différence 💜🕊️🌹 »
           </p>
         </div>
 
         <div style={{ background: '#fff', padding: '3rem 2.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', lineHeight: 1.8, fontSize: '1.05rem', color: 'var(--text-main)', boxShadow: 'var(--shadow-sm)' }}>
           {/* Logo officiel centré */}
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
             <img
               src="/logo.jpg"
-              alt="Salma Shop Chic Ladies"
-              style={{ width: '160px', height: '160px', borderRadius: '50%', margin: '0 auto', boxShadow: '0 8px 25px var(--primary-glow)', border: '3px solid var(--primary)' }}
+              alt="Global Business Services Grp SF"
+              style={{ width: '160px', height: '160px', borderRadius: '50%', margin: '0 auto', boxShadow: '0 8px 25px var(--primary-glow)', border: '3px solid var(--primary)', objectFit: 'cover' }}
             />
-            <h2 style={{ fontSize: '1.6rem', color: 'var(--dark)', marginTop: '1rem' }}>Salma Shop - Chic Ladies</h2>
-            <div style={{ color: 'var(--primary)', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', fontSize: '0.85rem' }}>
-              Vente Articles Divers • Dakar, Sénégal
+            <h2 style={{ fontSize: '1.6rem', color: 'var(--dark)', marginTop: '1rem', fontWeight: 800 }}>
+              Global Business Services Grp SF
+            </h2>
+            <div style={{ color: 'var(--primary)', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+              Groupe Salma Fall 🕊️💜🌹 • Vente Articles Divers
+            </div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+              Dakar, Sénégal
             </div>
           </div>
 
           <h3 style={{ fontSize: '1.35rem', color: 'var(--dark)', marginBottom: '1rem' }}>Notre Philosophie</h3>
           <p style={{ marginBottom: '1.5rem' }}>
-            Bienvenue chez <strong>Salma Shop</strong> ! Notre boutique a été créée pour répondre aux envies de toutes les femmes qui souhaitent allier élégance, modernité et respect de leur budget.
+            Bienvenue chez <strong>Global Business Services Grp SF (Groupe Salma Fall)</strong> ! Notre entreprise s’est imposée comme une référence incontournable avec une devise claire : <em>« La Qualité fait la Différence »</em>.
           </p>
           <p style={{ marginBottom: '1.5rem' }}>
-            Parce que chaque femme mérite d'être sublime en toute circonstance, nous nous engageons à vous proposer des articles de qualité supérieure – robes, ensembles glamour, sacs, chaussures et accessoires tendance – à des tarifs justes et accessibles.
+            Nous sélectionnons pour vous les meilleurs articles divers – mode féminine chic, tenues de cérémonie, maroquinerie, accessoires tendance, chaussures et produits du quotidien – alliant excellence, élégance et prix accessibles.
           </p>
 
           <h3 style={{ fontSize: '1.35rem', color: 'var(--dark)', marginBottom: '1rem' }}>Nos Engagements</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', margin: '2rem 0' }}>
             <div style={{ background: 'var(--surface-alt)', padding: '1.5rem', borderRadius: 'var(--radius-md)' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👗</div>
-              <h4 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Mode Féminine Chic</h4>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💎</div>
+              <h4 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--dark)' }}>La Qualité fait la Différence</h4>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                Sélection soignée de tenues pour vos cérémonies, événements ou sorties décontractées à Dakar.
+                Chaque article est rigoureusement sélectionné pour garantir durabilité, raffinement et satisfaction totale.
               </p>
             </div>
 
             <div style={{ background: 'var(--surface-alt)', padding: '1.5rem', borderRadius: 'var(--radius-md)' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👜</div>
-              <h4 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Articles Divers & Accessoires</h4>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🛍️</div>
+              <h4 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--dark)' }}>Vente Articles Divers</h4>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                Maroquinerie, sacs à main, chaussures et bijoux pour parfaire votre allure.
+                Une vaste gamme de produits chic, accessoires, maroquinerie et tenues élégantes adaptées à tous vos besoins.
               </p>
             </div>
 
             <div style={{ background: 'var(--surface-alt)', padding: '1.5rem', borderRadius: 'var(--radius-md)' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💸</div>
-              <h4 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Prix Adaptés au Budget</h4>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🕊️</div>
+              <h4 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--dark)' }}>Groupe Salma Fall</h4>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                « Se vêtir à tous prix 💜 » : la promesse d'une mode inclusive et abordable.
+                Un groupe de confiance dévoué à un service d'excellence, de proximité et de fiabilité au Sénégal.
               </p>
             </div>
 
             <div style={{ background: 'var(--surface-alt)', padding: '1.5rem', borderRadius: 'var(--radius-md)' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💬</div>
-              <h4 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Service Client Proche de Vous</h4>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                Disponible par téléphone et WhatsApp au <strong>+221 77 201 86 97</strong> pour vous accompagner.
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📞</div>
+              <h4 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--dark)' }}>Nos Contacts Directs</h4>
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                💬 WhatsApp : <strong>+221 78 340 48 39</strong><br />
+                📱 Mobile : <strong>+221 76 251 11 12</strong><br />
+                📞 Wave / Service : <strong>+221 77 201 86 97</strong>
               </p>
             </div>
           </div>
