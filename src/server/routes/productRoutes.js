@@ -159,11 +159,13 @@ router.get('/', async (req, res, next) => {
     // Récupérer les produits avec jointures optimisées sans sous-requêtes N+1
     const selectQuery = `
       SELECT p.*, c.name as category_name, c.slug as category_slug,
-             COALESCE(pi.image_url, p.featured_image) as primary_image,
+             pi.image_url as primary_image,
              COALESCE(sales_stats.total_sold, 0) as total_sold
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
-      LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = 1
+      LEFT JOIN product_images pi ON pi.id = (
+        SELECT id FROM product_images WHERE product_id = p.id ORDER BY is_primary DESC, id ASC LIMIT 1
+      )
       LEFT JOIN (
         SELECT product_id, SUM(quantity) as total_sold 
         FROM order_items 
