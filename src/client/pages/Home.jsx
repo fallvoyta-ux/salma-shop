@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ProductCard from '../components/ProductCard';
 import CategoryDrawing, { getCategoryTheme } from '../components/CategoryDrawings';
+import AssuranceBanner from '../components/AssuranceBanner';
 import { useSettings } from '../context/SettingsContext';
 
 export default function Home({ onNavigate }) {
@@ -102,6 +103,9 @@ export default function Home({ onNavigate }) {
             )}
           </div>
         </div>
+
+        {/* NOUVELLE BANNIÈRE ULTRA-MODERNISÉE : ASSURANCE TOUTES BRANCHES */}
+        <AssuranceBanner />
 
         {/* 2. BOUTONS RONDS DES RAYONS (Dessins d'articles en contour pur, sans couleurs) */}
         <div className="kahpoo-round-cats-wrap">

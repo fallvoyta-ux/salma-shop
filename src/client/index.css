@@ -2328,7 +2328,7 @@ button, input, select, textarea {
 .kahpoo-section-line {
   border: 0;
   height: 2px;
-  background: rgba(244, 63, 94, 0.2);
+  background: rgba(124, 58, 237, 0.25);
   margin: 0 0 1.75rem 0;
 }
 
@@ -2560,3 +2560,454 @@ button, input, select, textarea {
   border-color: var(--dark);
   color: #ffffff;
 }
+
+/* ==========================================================================
+   SECTION ASSURANCE TOUTES BRANCHES - GLOBAL BUSINESS GRP SF 3S
+   Design Ultra-Moderne, High-Tech, Responsive & Conversion Directe
+   ========================================================================== */
+.assurance-banner-section {
+  margin: 1.25rem 0 2rem 0;
+  width: 100%;
+}
+
+.assurance-banner-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #090d16 0%, #15142e 50%, #0c101d 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(249, 115, 22, 0.2);
+  padding: 2.25rem 2.5rem;
+  color: #ffffff;
+}
+
+.assurance-card-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.assurance-card-glow.orange {
+  width: 320px;
+  height: 320px;
+  background: #f97316;
+  top: -80px;
+  right: -60px;
+}
+
+.assurance-card-glow.purple {
+  width: 280px;
+  height: 280px;
+  background: #7c3aed;
+  bottom: -60px;
+  left: -40px;
+}
+
+.assurance-card-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1.35fr 0.85fr;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+/* Badge Service Officiel */
+.assurance-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fb923c;
+  margin-bottom: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.assurance-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 10px #22c55e;
+  animation: pulse-glow 2s infinite;
+}
+
+.assurance-badge-tag {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+/* Titre & Slogan */
+.assurance-title {
+  font-size: 2.2rem;
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  margin-bottom: 0.5rem;
+  font-family: var(--font-heading);
+  color: #ffffff;
+}
+
+.assurance-highlight {
+  background: linear-gradient(90deg, #fb923c 0%, #f97316 50%, #f43f5e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  text-shadow: 0 0 30px rgba(249, 115, 22, 0.2);
+}
+
+.assurance-tagline {
+  font-size: 0.98rem;
+  color: #cbd5e1;
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+/* Puces Véhicules */
+.assurance-vehicles-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 1.35rem;
+}
+
+.assurance-vehicle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.assurance-vehicle-chip:hover {
+  background: rgba(249, 115, 22, 0.15);
+  border-color: rgba(249, 115, 22, 0.4);
+  transform: translateY(-2px);
+}
+
+.chip-icon {
+  font-size: 1rem;
+}
+
+/* Encadré Processus */
+.assurance-process-box {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(249, 115, 22, 0.35);
+  border-radius: 14px;
+  padding: 1.15rem 1.35rem;
+  margin-bottom: 1.5rem;
+  box-shadow: inset 0 0 15px rgba(249, 115, 22, 0.05);
+}
+
+.process-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #fb923c;
+  letter-spacing: 1px;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+
+.process-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.process-step-item {
+  display: flex;
+  align-items: center;
+  font-size: 0.88rem;
+  color: #e2e8f0;
+}
+
+.step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #f97316;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
+}
+
+/* Boutons d'Action */
+.assurance-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.assurance-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.75rem 1.4rem;
+  border-radius: 12px;
+  text-decoration: none;
+  font-family: inherit;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.assurance-btn:hover {
+  transform: translateY(-2px);
+}
+
+.assurance-btn.whatsapp-btn {
+  background: linear-gradient(135deg, #25d366 0%, #16a34a 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.assurance-btn.whatsapp-btn:hover {
+  box-shadow: 0 8px 25px rgba(37, 211, 102, 0.5);
+}
+
+.assurance-btn.call-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(6px);
+}
+
+.assurance-btn.call-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: #fb923c;
+}
+
+.btn-icon {
+  font-size: 1.35rem;
+}
+
+.btn-text-wrap {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.btn-sub {
+  font-size: 0.7rem;
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-main {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.assurance-footer-note {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* Colonne Affiche Visuelle */
+.assurance-visual-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.assurance-poster-frame {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 2px rgba(249, 115, 22, 0.3);
+  cursor: pointer;
+  background: #000;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.assurance-poster-frame:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7), 0 0 0 2px #f97316, 0 0 30px rgba(249, 115, 22, 0.4);
+}
+
+.assurance-poster-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.assurance-poster-frame:hover .assurance-poster-img {
+  transform: scale(1.03);
+}
+
+.poster-overlay-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #ffffff;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.poster-caption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.caption-tag {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+
+/* Modal Lightbox */
+.assurance-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.assurance-modal-container {
+  position: relative;
+  max-width: 580px;
+  max-height: 92vh;
+  background: #0f172a;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.assurance-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.assurance-modal-close:hover {
+  background: #ef4444;
+  transform: scale(1.1);
+}
+
+.assurance-modal-img {
+  width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  display: block;
+}
+
+.assurance-modal-footer {
+  padding: 1rem 1.25rem;
+  background: #090d16;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Responsiveness */
+@media (max-width: 900px) {
+  .assurance-card-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  
+  .assurance-visual-col {
+    order: -1;
+  }
+
+  .assurance-poster-frame {
+    max-width: 260px;
+  }
+
+  .assurance-title {
+    font-size: 1.75rem;
+  }
+  
+  .assurance-banner-card {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .assurance-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .assurance-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
