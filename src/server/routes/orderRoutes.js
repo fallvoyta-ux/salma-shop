@@ -264,6 +264,7 @@ router.get('/track/:orderNumber', async (req, res, next) => {
       customer_name: maskedName,
       customer_phone: maskedPhone,
       delivery_city: order.delivery_city,
+      delivery_address: order.delivery_address || '',
       delivery_fee: order.delivery_fee,
       subtotal: order.subtotal,
       total_amount: order.total_amount,

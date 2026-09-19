@@ -187,34 +187,18 @@ export default function Checkout({ onNavigate }) {
       if (data.success && data.order) {
         clearCart();
 
-        // Pour Wave : Redirection directe vers le compte marchand officiel Wave de Groupe SALMA FALL
         if (paymentMethod === 'wave') {
-          const waveMerchantUrl = 'https://pay.wave.com/m/M_5iS6VUrJnTx-/c/sn/';
-          showToast('✓ Commande enregistrée ! Ouverture de Wave Groupe SALMA FALL...', 'success');
-
-          // Basculer vers la page de confirmation avec auto_wave
+          showToast('✓ Commande enregistrée ! Finalisation du règlement Wave...', 'success');
           onNavigate(`/order-confirmation/${data.order.order_number}?auto_wave=1`);
-
-          setTimeout(() => {
-            window.location.href = waveMerchantUrl;
-          }, 450);
           return;
         }
 
-        // Pour Orange Money : Redirection directe vers le compte Max it officiel de Groupe SALMA FALL
         if (paymentMethod === 'orange_money') {
-          const omQrUrl = 'https://qrcode.orange.sn/dcnYNsnEy5lJG79Nh7DAxLPcCEX';
-          showToast('✓ Commande enregistrée ! Ouverture d’Orange Money (Max it)...', 'success');
-
+          showToast('✓ Commande enregistrée ! Finalisation du règlement Orange Money...', 'success');
           onNavigate(`/order-confirmation/${data.order.order_number}?auto_om=1`);
-
-          setTimeout(() => {
-            window.location.href = omQrUrl;
-          }, 450);
           return;
         }
 
-        // Pour les paiements Cash ou autres : redirection directe vers WhatsApp
         if (data.whatsappUrl) {
           window.history.pushState({}, '', `/order-confirmation/${data.order.order_number}`);
           window.location.href = data.whatsappUrl;
@@ -468,12 +452,12 @@ export default function Checkout({ onNavigate }) {
                       />
                       <div>
                         <div style={{ fontWeight: 800, color: '#c2410c', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          🟠 Orange Money / Wave Sénégal
+                          🟠 Orange Money Sénégal (Max it)
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Redirection directe vers Wave Salma Shop (+221 77 201 86 97) & message avec succès</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Paiement direct Max it / QR Code officiel Groupe SALMA FALL (+221 77 201 86 97)</div>
                       </div>
                     </div>
-                    <span style={{ background: 'var(--brand-om)', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800 }}>OM</span>
+                    <span style={{ background: 'var(--brand-om)', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800 }}>ORANGE</span>
                   </label>
 
                   {/* Carte bancaire */}
@@ -612,14 +596,16 @@ export default function Checkout({ onNavigate }) {
                   paymentMethod === 'wave'
                     ? `🌊 Valider & Ouvrir Wave Salma Shop (+221 77 201 86 97)`
                     : paymentMethod === 'orange_money'
-                    ? `🟠 Valider & Ouvrir Wave Salma Shop (+221 77 201 86 97)`
+                    ? `🟠 Valider & Ouvrir Orange Money (Max it) (+221 77 201 86 97)`
                     : `📲 Valider & Confirmer Commande (${formatPrice(grandTotal)})`
                 )}
               </button>
 
               <div style={{ marginTop: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5, textAlign: 'center' }}>
-                {(paymentMethod === 'wave' || paymentMethod === 'orange_money') ? (
-                  <span>⚡ En cliquant sur Valider, vous êtes directement dirigé vers l'application <strong>Wave de Salma Shop (+221 77 201 86 97)</strong> pour envoyer votre règlement, puis envoyer votre message de confirmation avec succès sur WhatsApp.</span>
+                {paymentMethod === 'wave' ? (
+                  <span>⚡ En cliquant sur Valider, vous êtes directement dirigé vers le compte officiel <strong>Wave de Groupe SALMA FALL (+221 77 201 86 97)</strong> pour effectuer votre règlement en toute sécurité.</span>
+                ) : paymentMethod === 'orange_money' ? (
+                  <span>⚡ En cliquant sur Valider, vous accédez directement au paiement sécurisé <strong>Orange Money (Max it)</strong> pour <strong>Groupe SALMA FALL (+221 77 201 86 97)</strong>.</span>
                 ) : (
                   <span>⚡ En validant, votre commande est enregistrée et transmise directement sur le WhatsApp officiel de <strong>Global Business Services Grp SF (+221 77 201 86 97)</strong>.</span>
                 )}

@@ -3,98 +3,125 @@ import { useSettings } from '../context/SettingsContext';
 
 export default function OrderSuccess({ orderNumber, onNavigate }) {
   const { formatPrice, settings } = useSettings();
+
+  // 1. Déclarations de tous les Hooks en tête de composant (Règles des Hooks React)
   const [orderData, setOrderData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [autoRedirectTriggered, setAutoRedirectTriggered] = useState(false);
 
+  // 2. Chargement des détails de la commande
   useEffect(() => {
+    let cancelled = false;
+
     async function loadOrder() {
       try {
-        const res = await fetch(`/api/orders/track/${orderNumber}`);
+        const cleanNumber = String(orderNumber || '').trim();
+        if (!cleanNumber) {
+          if (!cancelled) {
+            setLoading(false);
+            setLoadError(true);
+          }
+          return;
+        }
+
+        const res = await fetch(`/api/orders/track/${encodeURIComponent(cleanNumber)}`);
         const data = await res.json();
-        if (data.success && data.order) {
-          setOrderData(data);
+        if (!cancelled) {
+          if (data.success && data.order) {
+            setOrderData(data);
+          } else {
+            setLoadError(true);
+          }
         }
       } catch (err) {
         console.error('Erreur chargement commande:', err);
+        if (!cancelled) setLoadError(true);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
-    if (orderNumber) {
-      loadOrder();
-    }
+    loadOrder();
+
+    return () => {
+      cancelled = true;
+    };
   }, [orderNumber]);
 
-  if (loading) {
-    return (
-      <div className="section" style={{ textAlign: 'center', padding: '6rem 0' }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⏳</div>
-        <p style={{ color: 'var(--text-muted)' }}>Chargement des détails de votre commande...</p>
-      </div>
-    );
-  }
+  // 3. Détection et déclenchement unique de l'ouverture Wave ou Orange Money
+  useEffect(() => {
+    if (autoRedirectTriggered) return;
 
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const isAutoWave = searchParams.get('auto_wave') === '1' || searchParams.get('auto_wave') === 'true';
+      const isAutoOm = searchParams.get('auto_om') === '1' || searchParams.get('auto_om') === 'true';
+
+      if (isAutoWave || isAutoOm) {
+        setAutoRedirectTriggered(true);
+
+        // Nettoyer l'URL pour ne pas re-déclencher la redirection si le client recharge la page
+        try {
+          const cleanPath = window.location.pathname;
+          window.history.replaceState({}, '', cleanPath);
+        } catch (e) {}
+
+        const targetUrl = isAutoWave
+          ? 'https://pay.wave.com/m/M_5iS6VUrJnTx-/c/sn/'
+          : 'https://qrcode.orange.sn/dcnYNsnEy5lJG79Nh7DAxLPcCEX';
+
+        const timer = setTimeout(() => {
+          window.location.href = targetUrl;
+        }, 650);
+
+        return () => clearTimeout(timer);
+      }
+    } catch (e) {
+      console.warn('Erreur gestion auto-redirect:', e);
+    }
+  }, [autoRedirectTriggered]);
+
+  // Variables calculées sécurisées (aucun risque de null pointer)
   const order = orderData ? orderData.order : null;
-  const items = orderData ? orderData.items : [];
+  const items = (orderData && Array.isArray(orderData.items)) ? orderData.items : [];
 
-  // Liens de paiement direct
-  const whatsappPhone = (settings.store_whatsapp || '221772018697').replace(/[^0-9]/g, '');
-  const displayPhone = settings.store_phone || '+221 77 201 86 97';
-  const totalAmount = order ? order.total_amount : 0;
-  const paymentMethod = order ? order.payment_method : 'wave';
+  const rawAmount = order ? order.total_amount : 0;
+  const totalAmount = Number(rawAmount) || 0;
+  const formattedTotal = totalAmount.toLocaleString('fr-FR');
 
-  const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
-  const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  const isMobile = isAndroid || isIOS;
+  const rawPaymentMethod = order ? order.payment_method : 'wave';
+  const paymentMethod = String(rawPaymentMethod || 'wave').toLowerCase();
+
+  const rawPhone = settings?.store_whatsapp || '221772018697';
+  const whatsappPhone = String(rawPhone).replace(/[^0-9]/g, '');
+  const displayPhone = settings?.store_phone || '+221 77 201 86 97';
 
   const waveMerchantUrl = 'https://pay.wave.com/m/M_5iS6VUrJnTx-/c/sn/';
   const omQrUrl = 'https://qrcode.orange.sn/dcnYNsnEy5lJG79Nh7DAxLPcCEX';
-  const waveAppLink = waveMerchantUrl;
   const omUssdUrl = `tel:*144*1*1*${whatsappPhone}*${totalAmount}%23`;
 
-  // Détection auto_wave ou auto_om depuis l'URL pour ouverture directe sur mobile ou navigateur
-  const [autoRedirectTriggered, setAutoRedirectTriggered] = useState(false);
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    if (!autoRedirectTriggered) {
-      if (searchParams.get('auto_wave') === '1' || searchParams.get('auto_wave') === 'true') {
-        setAutoRedirectTriggered(true);
-        const timer = setTimeout(() => {
-          window.location.href = waveMerchantUrl;
-        }, 500);
-        return () => clearTimeout(timer);
-      }
-      if (searchParams.get('auto_om') === '1' || searchParams.get('auto_om') === 'true') {
-        setAutoRedirectTriggered(true);
-        const timer = setTimeout(() => {
-          window.location.href = omQrUrl;
-        }, 500);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [waveMerchantUrl, omQrUrl, autoRedirectTriggered]);
-
-  // Message WhatsApp d'envoi avec succès
   const isMobileMoney = paymentMethod === 'wave' || paymentMethod === 'orange_money';
   const providerTitle = paymentMethod === 'orange_money' ? 'ORANGE MONEY' : 'WAVE';
+
   const whatsappMsg = isMobileMoney
     ? `✅ *PAIEMENT ENVOYÉ AVEC SUCCÈS SUR ${providerTitle} (GROUPE SALMA FALL)*\n` +
       `🛍️ *COMMANDE - GLOBAL BUSINESS SERVICES GRP SF*\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
-      `📦 *N° Commande* : ${orderNumber}\n` +
-      `💰 *MONTANT ENVOYÉ* : ${totalAmount.toLocaleString('fr-FR')} FCFA\n` +
+      `📦 *N° Commande* : ${orderNumber || (order ? order.order_number : 'CMD')}\n` +
+      `💰 *MONTANT ENVOYÉ* : ${formattedTotal} FCFA\n` +
       `📱 *Bénéficiaire* : Groupe SALMA FALL (+221 77 201 86 97)\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
-      `👤 *Client* : ${order ? order.customer_name : 'Client'}\n` +
-      `📍 *Livraison* : ${order ? (order.delivery_city + ', ' + order.delivery_address) : 'Dakar'}\n` +
+      `👤 *Client* : ${order?.customer_name || 'Client'}\n` +
+      `📍 *Livraison* : ${order?.delivery_city || 'Dakar'}, ${order?.delivery_address || ''}\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `Bonjour Groupe SALMA FALL / Salma Shop ! 👋\n` +
-      `J'ai bien validé mon règlement de ${totalAmount.toLocaleString('fr-FR')} FCFA sur votre compte ${providerTitle} officiel avec succès. ✅\n` +
+      `J'ai bien validé mon règlement de ${formattedTotal} FCFA sur votre compte ${providerTitle} officiel avec succès. ✅\n` +
       `Merci de me confirmer la bonne réception et de préparer ma livraison ! 💜🕊️🌹`
-    : `Bonjour ${settings.store_name || 'Global Business Services Grp SF'} ! 👋\n\n` +
-      `Je viens d'effectuer la commande *${orderNumber}* sur votre boutique en ligne.\n` +
-      `💰 Montant total : ${totalAmount.toLocaleString('fr-FR')} FCFA.\n` +
+    : `Bonjour ${settings?.store_name || 'Global Business Services Grp SF'} ! 👋\n\n` +
+      `Je viens d'effectuer la commande *${orderNumber || (order ? order.order_number : 'CMD')}* sur votre boutique en ligne.\n` +
+      `💰 Montant total : ${formattedTotal} FCFA.\n` +
       `💳 Moyen de paiement : ${paymentMethod.toUpperCase()}.\n` +
       `Pouvez-vous me confirmer la réception et le délai de livraison ? Merci !`;
 
@@ -102,14 +129,85 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
     ? orderData.whatsappUrl
     : `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(whatsappMsg)}`;
 
-  const [copied, setCopied] = useState(false);
   const handleCopyNumber = () => {
-    if (navigator.clipboard) {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(displayPhone);
       setCopied(true);
       setTimeout(() => setCopied(false), 3000);
     }
   };
+
+  // Écran de chargement initial (placé APRES tous les Hooks)
+  if (loading) {
+    return (
+      <div className="section" style={{ textAlign: 'center', padding: '6rem 0' }}>
+        <div style={{
+          width: '52px',
+          height: '52px',
+          border: '4px solid rgba(124, 58, 237, 0.2)',
+          borderTopColor: 'var(--primary, #7c3aed)',
+          borderRadius: '50%',
+          margin: '0 auto 1.5rem',
+          animation: 'spin 0.9s linear infinite'
+        }} />
+        <h2 style={{ fontSize: '1.4rem', color: 'var(--dark)', marginBottom: '0.5rem' }}>
+          Finalisation de votre commande...
+        </h2>
+        <p style={{ color: 'var(--text-muted)' }}>
+          Chargement des informations de paiement sécurisé pour la commande <strong>{orderNumber}</strong>.
+        </p>
+      </div>
+    );
+  }
+
+  // Écran de secours en cas d'erreur de chargement sans casser l'interface
+  if (loadError && !order) {
+    return (
+      <div className="section">
+        <div className="container container-narrow">
+          <div
+            style={{
+              background: '#fff',
+              padding: '3rem 2rem',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--shadow-lg)',
+              textAlign: 'center'
+            }}
+          >
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎉</div>
+            <span className="section-tag" style={{ background: '#dcfce7', color: '#15803d' }}>
+              Commande Reçue
+            </span>
+            <h1 style={{ fontSize: '2rem', color: 'var(--dark)', marginTop: '0.75rem', marginBottom: '0.75rem' }}>
+              Merci pour votre commande !
+            </h1>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', maxWidth: '520px', margin: '0 auto 1.5rem' }}>
+              Votre commande <strong>{orderNumber}</strong> a bien été enregistrée dans notre système.
+            </p>
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>
+              <a
+                href={finalWhatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-whatsapp btn-lg"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+              >
+                <span>💬</span> Confirmer sur WhatsApp (+221 77 201 86 97)
+              </a>
+              <button
+                className="btn btn-outline btn-lg"
+                onClick={() => onNavigate('/track-order')}
+              >
+                🔍 Suivre ma commande
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="section">
@@ -130,8 +228,8 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
             style={{
               width: '72px',
               height: '72px',
-              background: 'var(--success-bg)',
-              color: 'var(--success)',
+              background: 'var(--success-bg, #dcfce7)',
+              color: 'var(--success, #16a34a)',
               borderRadius: '50%',
               display: 'inline-flex',
               alignItems: 'center',
@@ -158,7 +256,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
           <div
             style={{
               display: 'inline-block',
-              background: 'var(--surface-alt)',
+              background: 'var(--surface-alt, #f8fafc)',
               padding: '0.75rem 1.75rem',
               borderRadius: 'var(--radius-md)',
               border: '1px dashed var(--primary)',
@@ -170,7 +268,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
               marginBottom: '2rem'
             }}
           >
-            N° de Commande : <span style={{ color: 'var(--primary)' }}>{orderNumber}</span>
+            N° de Commande : <span style={{ color: 'var(--primary)' }}>{orderNumber || order?.order_number}</span>
           </div>
 
           {/* SECTION DÉDIÉE PAIEMENT DIRECT WAVE */}
@@ -245,7 +343,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxWidth: '430px', margin: '0 auto' }}>
                 <a
-                  href="https://pay.wave.com/m/M_5iS6VUrJnTx-/c/sn/"
+                  href={waveMerchantUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="btn btn-lg"
@@ -370,7 +468,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxWidth: '430px', margin: '0 auto' }}>
                 <a
-                  href="https://qrcode.orange.sn/dcnYNsnEy5lJG79Nh7DAxLPcCEX"
+                  href={omQrUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="btn btn-lg"
@@ -475,56 +573,60 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                 Détails de la livraison
               </h3>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', background: 'var(--surface-alt)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '2rem', fontSize: '0.92rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', background: 'var(--surface-alt, #f8fafc)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '2rem', fontSize: '0.92rem' }}>
                 <div>
                   <div style={{ color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Destinataire :</div>
-                  <div style={{ fontWeight: 700 }}>{order.customer_name}</div>
-                  <div>📞 {order.customer_phone}</div>
+                  <div style={{ fontWeight: 700 }}>{order.customer_name || 'Client'}</div>
+                  <div>📞 {order.customer_phone || 'N/A'}</div>
                 </div>
 
                 <div>
                   <div style={{ color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Adresse de livraison :</div>
-                  <div style={{ fontWeight: 700 }}>{order.delivery_city}</div>
-                  <div>{order.delivery_address}</div>
+                  <div style={{ fontWeight: 700 }}>{order.delivery_city || 'Dakar'}</div>
+                  <div>{order.delivery_address || 'Adresse indiquée'}</div>
                 </div>
 
                 <div>
                   <div style={{ color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Moyen de paiement :</div>
                   <div style={{ fontWeight: 700, textTransform: 'uppercase' }}>
-                    {order.payment_method} ({order.payment_status === 'paid' ? 'Payé ✓' : 'En attente'})
+                    {order.payment_method || 'WAVE'} ({order.payment_status === 'paid' ? 'Payé ✓' : 'En attente'})
                   </div>
                 </div>
 
                 <div>
                   <div style={{ color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Zone & Tarif :</div>
                   <div style={{ fontWeight: 700 }}>
-                    {order.zone_name || 'Dakar'} : {formatPrice(order.delivery_fee)}
+                    {order.zone_name || 'Dakar'} : {formatPrice(order.delivery_fee || 0)}
                   </div>
                 </div>
               </div>
 
               {/* Articles commandés */}
-              <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: 'var(--dark)' }}>
-                Articles commandés ({items.length})
-              </h3>
+              {items.length > 0 && (
+                <>
+                  <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: 'var(--dark)' }}>
+                    Articles commandés ({items.length})
+                  </h3>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
-                {items.map((it) => (
-                  <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1rem', background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <span style={{ fontWeight: 800 }}>{it.quantity}x</span>
-                      <span style={{ fontWeight: 600 }}>{it.product_name}</span>
-                    </div>
-                    <span style={{ fontWeight: 700 }}>{formatPrice(it.subtotal)}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
+                    {items.map((it, idx) => (
+                      <div key={it.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1rem', background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <span style={{ fontWeight: 800 }}>{it.quantity}x</span>
+                          <span style={{ fontWeight: 600 }}>{it.product_name || it.name || 'Article'}</span>
+                        </div>
+                        <span style={{ fontWeight: 700 }}>{formatPrice(it.subtotal || (it.price * it.quantity) || 0)}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </>
+              )}
 
               {/* Total final */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '1.25rem', background: '#f8fafc', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
                 <span style={{ fontSize: '1.15rem', fontWeight: 800 }}>Total réglé / à régler :</span>
                 <span style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--dark)', fontFamily: 'var(--font-heading)' }}>
-                  {formatPrice(order.total_amount)}
+                  {formatPrice(order.total_amount || totalAmount)}
                 </span>
               </div>
             </div>
