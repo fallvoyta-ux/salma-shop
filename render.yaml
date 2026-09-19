@@ -25,3 +25,21 @@ services:
         value: test
       - key: JWT_SECRET
         generateValue: true
+      # Secrets et connexions : valeurs saisies UNIQUEMENT dans le tableau de bord
+      # Render (Environment). sync: false = jamais stockées dans ce fichier versionné.
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_DEFAULT_EMAIL
+        sync: false
+      - key: ADMIN_DEFAULT_PASSWORD
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: WAVE_API_KEY
+        sync: false
+      - key: WAVE_BUSINESS_ID
+        sync: false
+      - key: WAVE_WEBHOOK_SECRET
+        sync: false
+      - key: ORANGE_MONEY_MERCHANT_KEY
+        sync: false

@@ -1,7 +1,4 @@
 import assert from 'assert';
-import jwt from 'jsonwebtoken';
-import { config } from '../config.js';
-import { db } from '../db/connection.js';
 
 const BASE_URL = 'http://localhost:5000';
 
@@ -34,7 +31,6 @@ async function runFullJourneyTest() {
 
   // 4. Consultation de la fiche produit
   const targetSlug = searchData.products[0].slug;
-  await db.execute("UPDATE products SET stock = 20 WHERE slug = ?", [targetSlug]);
   console.log(`\n4️⃣ Consultation de la fiche produit (/api/products/${targetSlug})...`);
   const prodRes = await fetch(`${BASE_URL}/api/products/${targetSlug}`);
   const prodData = await prodRes.json();
@@ -119,11 +115,19 @@ async function runFullJourneyTest() {
   console.log(`   ✓ Suivi réussi : Statut actuel = [${trackData.order.order_status.toUpperCase()}]`);
 
   // 10. Connexion Administrateur
-  console.log('\n🔟 Connexion Espace Administrateur...');
-  const adminUser = await db.queryOne("SELECT id, email, first_name, last_name, role FROM users WHERE role = 'admin' LIMIT 1");
-  assert.ok(adminUser, 'Un compte administrateur doit exister');
-  const adminToken = jwt.sign({ id: adminUser.id, email: adminUser.email, role: 'admin' }, config.jwtSecret, { expiresIn: '1h' });
-  console.log(`   ✓ Connecté en tant qu’administrateur (${adminUser.first_name} ${adminUser.last_name})`);
+  console.log('\n🔟 Connexion Espace Administrateur (/api/auth/login)...');
+  const loginRes = await fetch(`${BASE_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: 'admin@salmashop.sn',
+      password: 'AdminSalma2026!'
+    })
+  });
+  const loginData = await loginRes.json();
+  assert.ok(loginData.success, 'Connexion admin échouée');
+  const adminToken = loginData.token;
+  console.log(`   ✓ Connecté en tant qu’administrateur (${loginData.user.first_name} ${loginData.user.last_name})`);
 
   // 11. Consultation du tableau de bord et KPI réels
   console.log('\n1️⃣1️⃣ Consultation des statistiques réelles du Dashboard (/api/admin/stats)...');

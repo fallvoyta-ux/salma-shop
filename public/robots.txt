@@ -1,6 +1,15 @@
 User-agent: *
 Allow: /
+
+# Zones privées ou sans intérêt pour le référencement
 Disallow: /admin
 Disallow: /api
+Disallow: /cart
+Disallow: /checkout
+Disallow: /account
+Disallow: /login
+Disallow: /register
+Disallow: /order-confirmation
+Disallow: /uploads
 
 Sitemap: https://salmashop.onrender.com/sitemap.xml

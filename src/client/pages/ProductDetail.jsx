@@ -252,7 +252,7 @@ export default function ProductDetail({ slug, onNavigate }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f59e0b', fontWeight: 700 }}>
                 {product.review_count > 0 ? (
                   <>
-                    <span>★</span> {Number(product.average_rating || 5).toFixed(1)} ({product.review_count} avis)
+                    <span>★</span> {product.average_rating} ({product.review_count} avis)
                   </>
                 ) : (
                   <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Aucun avis pour l'instant</span>
@@ -353,7 +353,7 @@ export default function ProductDetail({ slug, onNavigate }) {
                 <span className="share-box-title">Partager cet article sur les réseaux :</span>
                 <div className="share-box-buttons">
                   <a
-                    href={`https://wa.me/?text=${encodeURIComponent(`Regarde cette merveille sur ${settings.store_name || 'Global Business Services Grp SF'} : *${product.name}* (${formatPrice(currentPrice)}) ✨ 👉 ${window.location.href}`)}`}
+                    href={`https://wa.me/?text=${encodeURIComponent(`Regarde cette merveille sur ${settings.store_name || 'Global Business Services Grp SF'} : *${product.name}* (${formatPrice(product.price)}) ✨ 👉 ${window.location.href}`)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="share-pill whatsapp"

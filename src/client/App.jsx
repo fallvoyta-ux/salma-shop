@@ -9,6 +9,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
 import WhatsAppButton from './components/WhatsAppButton';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Pages publiques
 import Home from './pages/Home';
@@ -29,6 +30,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 
 // Espace Administrateur
 import { lazy, Suspense } from 'react';
+import { applyRouteMeta } from './seo';
 
 const AdminLayout = lazy(() => import('./admin/AdminLayout'));
 const AdminLogin = lazy(() => import('./admin/AdminLogin'));
@@ -39,6 +41,7 @@ const CategoriesList = lazy(() => import('./admin/CategoriesList'));
 const OrdersList = lazy(() => import('./admin/OrdersList'));
 const CustomersList = lazy(() => import('./admin/CustomersList'));
 const ReviewsList = lazy(() => import('./admin/ReviewsList'));
+const Messages = lazy(() => import('./admin/Messages'));
 const DeliveryZones = lazy(() => import('./admin/DeliveryZones'));
 const Settings = lazy(() => import('./admin/Settings'));
 
@@ -103,6 +106,11 @@ function AppContent() {
 
   // Détection des routes Admin
   const isAdminRoute = pathname.startsWith('/admin');
+
+  // Titre, description et URL canonique adaptés à chaque page (SEO)
+  useEffect(() => {
+    applyRouteMeta(pathname);
+  }, [pathname]);
 
   // Si route Admin (hors page login explicite)
   if (isAdminRoute && pathname !== '/admin/login') {
@@ -171,6 +179,12 @@ function AppContent() {
     pageComponent = (
       <AdminLayout currentPath={pathname} onNavigate={navigate}>
         <ReviewsList onNavigate={navigate} />
+      </AdminLayout>
+    );
+  } else if (pathname === '/admin/messages') {
+    pageComponent = (
+      <AdminLayout currentPath={pathname} onNavigate={navigate}>
+        <Messages onNavigate={navigate} />
       </AdminLayout>
     );
   } else if (pathname === '/admin/delivery-zones') {
@@ -264,14 +278,16 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ToastProvider>
-      <AuthProvider>
-        <SettingsProvider>
-          <CartProvider>
-            <AppContent />
-          </CartProvider>
-        </SettingsProvider>
-      </AuthProvider>
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <AuthProvider>
+          <SettingsProvider>
+            <CartProvider>
+              <AppContent />
+            </CartProvider>
+          </SettingsProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }

@@ -1,7 +1,7 @@
 {
-  "name": "boutique-senegal-ecommerce",
+  "name": "salmashop",
   "version": "1.0.0",
-  "description": "Application e-commerce professionnelle pour le Sénégal avec Wave, Orange Money, gestion des stocks et espace administrateur complet",
+  "description": "Boutique en ligne Salma Shop (Global Business Services Grp SF) : Wave, Orange Money, gestion des stocks et espace administrateur.",
   "private": true,
   "type": "module",
   "engines": {
@@ -20,6 +20,7 @@
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.4",
     "bcryptjs": "^3.0.2",
+    "cloudinary": "^1.41.3",
     "compression": "^1.8.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
@@ -28,6 +29,7 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^1.16.0",
     "multer": "^1.4.5-lts.1",
+    "multer-storage-cloudinary": "^4.0.0",
     "pg": "^8.23.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

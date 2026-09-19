@@ -67,24 +67,19 @@ export default function ProductCard({ product, onNavigate }) {
           </a>
         </h3>
 
-        {/* Note & Avis réels */}
-        <div className="product-rating">
-          {Number(product.review_count || product.rating_count) > 0 ? (
-            <>
-              <span style={{ color: '#f59e0b', fontSize: '0.95rem' }}>
-                {'★'.repeat(Math.min(5, Math.max(1, Math.round(Number(product.average_rating || product.avg_rating || 5)))))}
-                {'☆'.repeat(Math.max(0, 5 - Math.min(5, Math.max(1, Math.round(Number(product.average_rating || product.avg_rating || 5))))))}
-              </span>
-              <span className="product-rating-count">
-                ({Number(product.average_rating || product.avg_rating || 5).toFixed(1)}) • {product.review_count || product.rating_count} avis
-              </span>
-            </>
-          ) : (
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              Aucun avis pour l'instant
+        {/* Note & Avis réels (aucune étoile si le produit n'a pas encore d'avis) */}
+        {product.review_count > 0 ? (
+          <div className="product-rating">
+            <span>{'★'.repeat(Math.round(product.average_rating))}{'☆'.repeat(5 - Math.round(product.average_rating))}</span>
+            <span className="product-rating-count">
+              ({product.average_rating}) · {product.review_count} avis
             </span>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="product-rating">
+            <span className="product-rating-count" style={{ color: 'var(--text-muted)' }}>Aucun avis pour l’instant</span>
+          </div>
+        )}
 
         {/* Prix Simple en FCFA */}
         <div className="product-price-wrap">

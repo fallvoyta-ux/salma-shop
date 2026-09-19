@@ -1,10 +1,26 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 
 export default function AdminLayout({ currentPath, onNavigate, children }) {
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
   const { settings } = useSettings();
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  // Petit badge dans le menu : nombre de messages de contact non lus.
+  // Rafraîchi à chaque changement de page admin (pas de websocket ici,
+  // c'est volontairement simple).
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    fetch('/api/admin/contacts', { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(res => res.json())
+      .then(data => {
+        if (!cancelled && data.success) setUnreadMessages(data.unreadCount || 0);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [token, currentPath]);
 
   const isCurrent = (path) => currentPath === path || (path === '/admin/dashboard' && (currentPath === '/admin' || currentPath === '/admin/'));
 
@@ -15,6 +31,7 @@ export default function AdminLayout({ currentPath, onNavigate, children }) {
     { path: '/admin/orders', icon: '📦', label: 'Commandes' },
     { path: '/admin/customers', icon: '👥', label: 'Clients' },
     { path: '/admin/reviews', icon: '⭐', label: 'Avis Clients' },
+    { path: '/admin/messages', icon: '✉️', label: 'Messages' },
     { path: '/admin/delivery-zones', icon: '🚚', label: 'Zones de Livraison' },
     { path: '/admin/settings', icon: '⚙️', label: 'Paramètres Boutique' }
   ];
@@ -47,7 +64,16 @@ export default function AdminLayout({ currentPath, onNavigate, children }) {
               }}
             >
               <span style={{ fontSize: '1.1rem' }}>{item.icon}</span>
-              <span>{item.label}</span>
+              <span style={{ flex: 1 }}>{item.label}</span>
+              {item.path === '/admin/messages' && unreadMessages > 0 && (
+                <span style={{
+                  background: '#ef4444', color: '#fff', fontSize: '0.7rem', fontWeight: 800,
+                  borderRadius: '999px', minWidth: '20px', height: '20px',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px'
+                }}>
+                  {unreadMessages}
+                </span>
+              )}
             </a>
           ))}
 

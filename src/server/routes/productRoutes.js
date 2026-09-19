@@ -3,6 +3,20 @@ import { db } from '../db/connection.js';
 
 const router = express.Router();
 
+/**
+ * Nettoie les champs d'avis renvoyés par les jointures SQL : arrondit la
+ * note moyenne à 1 décimale et force review_count en entier. Sans avis
+ * approuvé, average_rating reste `null` (le client n'affiche alors aucune
+ * étoile plutôt qu'une fausse note).
+ */
+function normalizeRatings(products) {
+  return products.map(p => ({
+    ...p,
+    review_count: p.review_count ? parseInt(p.review_count, 10) : 0,
+    average_rating: p.average_rating != null ? parseFloat(Number(p.average_rating).toFixed(1)) : null
+  }));
+}
+
 // Récupérer les produits en vedette (Homepage)
 router.get('/featured', async (req, res, next) => {
   try {
@@ -12,22 +26,16 @@ router.get('/featured', async (req, res, next) => {
                (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
                (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1)
              ) as primary_image,
-             COALESCE(r.avg_rating, 0) as average_rating,
-             COALESCE(r.review_count, 0) as review_count
+             (SELECT COUNT(*) FROM reviews WHERE product_id = p.id AND status = 'approved') as review_count,
+             (SELECT AVG(rating) FROM reviews WHERE product_id = p.id AND status = 'approved') as average_rating
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
-      LEFT JOIN (
-        SELECT product_id, ROUND(AVG(rating), 1) as avg_rating, COUNT(*) as review_count
-        FROM reviews
-        WHERE status = 'approved'
-        GROUP BY product_id
-      ) r ON r.product_id = p.id
       WHERE p.is_active = 1 AND p.is_featured = 1
       ORDER BY p.id DESC
       LIMIT 8
     `);
 
-    res.json({ success: true, products });
+    res.json({ success: true, products: normalizeRatings(products) });
   } catch (err) {
     next(err);
   }
@@ -42,22 +50,16 @@ router.get('/new-arrivals', async (req, res, next) => {
                (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
                (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1)
              ) as primary_image,
-             COALESCE(r.avg_rating, 0) as average_rating,
-             COALESCE(r.review_count, 0) as review_count
+             (SELECT COUNT(*) FROM reviews WHERE product_id = p.id AND status = 'approved') as review_count,
+             (SELECT AVG(rating) FROM reviews WHERE product_id = p.id AND status = 'approved') as average_rating
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
-      LEFT JOIN (
-        SELECT product_id, ROUND(AVG(rating), 1) as avg_rating, COUNT(*) as review_count
-        FROM reviews
-        WHERE status = 'approved'
-        GROUP BY product_id
-      ) r ON r.product_id = p.id
       WHERE p.is_active = 1
       ORDER BY p.created_at DESC
       LIMIT 8
     `);
 
-    res.json({ success: true, products });
+    res.json({ success: true, products: normalizeRatings(products) });
   } catch (err) {
     next(err);
   }
@@ -72,22 +74,16 @@ router.get('/promotions', async (req, res, next) => {
                (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
                (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1)
              ) as primary_image,
-             COALESCE(r.avg_rating, 0) as average_rating,
-             COALESCE(r.review_count, 0) as review_count
+             (SELECT COUNT(*) FROM reviews WHERE product_id = p.id AND status = 'approved') as review_count,
+             (SELECT AVG(rating) FROM reviews WHERE product_id = p.id AND status = 'approved') as average_rating
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
-      LEFT JOIN (
-        SELECT product_id, ROUND(AVG(rating), 1) as avg_rating, COUNT(*) as review_count
-        FROM reviews
-        WHERE status = 'approved'
-        GROUP BY product_id
-      ) r ON r.product_id = p.id
       WHERE p.is_active = 1 AND (p.is_promo = 1 OR p.compare_price > p.price)
       ORDER BY p.id DESC
       LIMIT 8
     `);
 
-    res.json({ success: true, products });
+    res.json({ success: true, products: normalizeRatings(products) });
   } catch (err) {
     next(err);
   }
@@ -185,8 +181,8 @@ router.get('/', async (req, res, next) => {
       SELECT p.*, c.name as category_name, c.slug as category_slug,
              pi.image_url as primary_image,
              COALESCE(sales_stats.total_sold, 0) as total_sold,
-             COALESCE(r.avg_rating, 0) as average_rating,
-             COALESCE(r.review_count, 0) as review_count
+             review_stats.review_count as review_count,
+             review_stats.average_rating as average_rating
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
       LEFT JOIN product_images pi ON pi.id = (
@@ -198,11 +194,11 @@ router.get('/', async (req, res, next) => {
         GROUP BY product_id
       ) sales_stats ON sales_stats.product_id = p.id
       LEFT JOIN (
-        SELECT product_id, ROUND(AVG(rating), 1) as avg_rating, COUNT(*) as review_count
+        SELECT product_id, COUNT(*) as review_count, AVG(rating) as average_rating
         FROM reviews
         WHERE status = 'approved'
         GROUP BY product_id
-      ) r ON r.product_id = p.id
+      ) review_stats ON review_stats.product_id = p.id
       ${whereClause}
       ORDER BY ${orderBy}
       LIMIT ? OFFSET ?
@@ -212,7 +208,7 @@ router.get('/', async (req, res, next) => {
 
     res.json({
       success: true,
-      products,
+      products: normalizeRatings(products),
       pagination: {
         total,
         page: parsedPage,
@@ -289,7 +285,7 @@ router.get('/:slug', async (req, res, next) => {
         images,
         reviews,
         review_count: reviewStats && reviewStats.review_count ? parseInt(reviewStats.review_count, 10) : 0,
-        average_rating: reviewStats && reviewStats.average_rating != null ? parseFloat(Number(reviewStats.average_rating).toFixed(1)) : 0,
+        average_rating: reviewStats && reviewStats.average_rating != null ? parseFloat(Number(reviewStats.average_rating).toFixed(1)) : null,
         parsed_specifications: parsedSpecs
       }
     });
@@ -319,7 +315,9 @@ router.get('/:slug/related', async (req, res, next) => {
              COALESCE(
                 (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
                 (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1)
-             ) as primary_image
+             ) as primary_image,
+             (SELECT COUNT(*) FROM reviews WHERE product_id = p.id AND status = 'approved') as review_count,
+             (SELECT AVG(rating) FROM reviews WHERE product_id = p.id AND status = 'approved') as average_rating
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
       WHERE p.category_id = ? AND p.id != ? AND p.is_active = 1
@@ -327,79 +325,7 @@ router.get('/:slug/related', async (req, res, next) => {
       LIMIT 4
     `, [product.category_id, product.id]);
 
-    res.json({ success: true, products: related });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// Vérifier et synchroniser le panier en direct (prix et stock réels)
-router.post('/verify-cart', async (req, res, next) => {
-  try {
-    const { items = [] } = req.body;
-    if (!Array.isArray(items) || items.length === 0) {
-      return res.json({ success: true, items: [], hasChanges: false });
-    }
-
-    let hasChanges = false;
-    const verified = [];
-
-    for (const it of items) {
-      const prodId = it.id || it.productId || it.product_id;
-      if (!prodId) continue;
-
-      const product = await db.queryOne(`
-        SELECT p.id, p.name, p.slug, p.price, p.compare_price, p.stock, p.sku, p.is_active,
-               COALESCE(
-                 (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
-                 (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1)
-               ) as primary_image
-        FROM products p
-        WHERE p.id = ?
-      `, [prodId]);
-
-      if (!product || product.is_active !== 1) {
-        hasChanges = true;
-        verified.push({
-          id: prodId,
-          isAvailable: false,
-          reason: !product ? 'deleted' : 'inactive'
-        });
-        continue;
-      }
-
-      const availableStock = Math.max(0, product.stock);
-      const requestedQty = parseInt(it.quantity, 10) || 1;
-      const validQty = Math.min(requestedQty, availableStock);
-
-      const priceChanged = product.price !== it.price;
-      const stockChanged = validQty !== requestedQty;
-
-      if (priceChanged || stockChanged) {
-        hasChanges = true;
-      }
-
-      verified.push({
-        id: product.id,
-        name: product.name,
-        slug: product.slug,
-        price: product.price,
-        compare_price: product.compare_price,
-        stock: product.stock,
-        sku: product.sku,
-        image: product.primary_image,
-        quantity: validQty,
-        isAvailable: availableStock > 0,
-        priceChanged,
-        stockChanged
-      });
-    }
-
-    res.json({
-      success: true,
-      items: verified,
-      hasChanges
-    });
+    res.json({ success: true, products: normalizeRatings(related) });
   } catch (err) {
     next(err);
   }

@@ -44,6 +44,20 @@ let sqliteTxLock = Promise.resolve();
  * Convertit une requête SQLite avec des placeholders '?' en syntaxe PostgreSQL ($1, $2, ...)
  * et ajoute RETURNING id si c'est un INSERT sans RETURNING explicite.
  */
+/**
+ * Remplace toute valeur `undefined` par `null` avant liaison SQL.
+ *
+ * node:sqlite (contrairement à `pg`) refuse de lier `undefined` et lève
+ * "Provided value cannot be bound to SQLite parameter N" — ce qui plantait
+ * en HTTP 500 chaque fois qu'un champ optionnel était omis d'une requête
+ * (ex. modification d'une catégorie sans renvoyer `is_active`). Comme la
+ * plupart des UPDATE utilisent `COALESCE(?, colonne)`, remplacer par `null`
+ * a en plus l'effet voulu : le champ omis conserve sa valeur existante.
+ */
+function normalizeParams(params) {
+  return params.map(p => (p === undefined ? null : p));
+}
+
 function convertSqlForPg(sql) {
   let paramIndex = 1;
   let inString = false;
@@ -140,10 +154,6 @@ export async function initSchema() {
   }
 }
 
-function normalizeParams(params) {
-  return (Array.isArray(params) ? params : [params]).map(v => v === undefined ? null : v);
-}
-
 /**
  * Abstraction unifiée pour requêtes préparées (PostgreSQL & SQLite)
  */
@@ -157,7 +167,7 @@ export const db = {
   },
 
   async queryAll(sql, params = []) {
-    const flatParams = normalizeParams(params);
+    const flatParams = normalizeParams(Array.isArray(params) ? params : [params]);
 
     if (isPostgres) {
       const pgSql = convertSqlForPg(sql);
@@ -171,7 +181,7 @@ export const db = {
   },
 
   async queryOne(sql, params = []) {
-    const flatParams = normalizeParams(params);
+    const flatParams = normalizeParams(Array.isArray(params) ? params : [params]);
 
     if (isPostgres) {
       const pgSql = convertSqlForPg(sql);
@@ -185,7 +195,7 @@ export const db = {
   },
 
   async execute(sql, params = []) {
-    const flatParams = normalizeParams(params);
+    const flatParams = normalizeParams(Array.isArray(params) ? params : [params]);
 
     if (isPostgres) {
       const pgSql = convertSqlForPg(sql);
@@ -224,19 +234,19 @@ export const db = {
         // Objet transactionnel dédié exécutant TOUTES les requêtes sur CE client unique
         const tx = {
           async queryAll(sql, params = []) {
-            const flatParams = normalizeParams(params);
+            const flatParams = normalizeParams(Array.isArray(params) ? params : [params]);
             const pgSql = convertSqlForPg(sql);
             const res = await client.query(pgSql, flatParams);
             return res.rows;
           },
           async queryOne(sql, params = []) {
-            const flatParams = normalizeParams(params);
+            const flatParams = normalizeParams(Array.isArray(params) ? params : [params]);
             const pgSql = convertSqlForPg(sql);
             const res = await client.query(pgSql, flatParams);
             return res.rows.length > 0 ? res.rows[0] : null;
           },
           async execute(sql, params = []) {
-            const flatParams = normalizeParams(params);
+            const flatParams = normalizeParams(Array.isArray(params) ? params : [params]);
             const pgSql = convertSqlForPg(sql);
             const res = await client.query(pgSql, flatParams);
             const lastId = res.rows && res.rows.length > 0 && res.rows[0].id !== undefined 

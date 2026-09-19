@@ -2,8 +2,9 @@ name: Keep-Alive 24/7 (Anti-Sleep Render)
 
 on:
   schedule:
-    # Déclenchement automatique toutes les 10 minutes en continu dans le cloud
-    - cron: '*/10 * * * *'
+    # Toutes les 14 minutes : juste sous le seuil de mise en veille de Render (15 min),
+    # tout en consommant deux fois moins de minutes GitHub Actions gratuites.
+    - cron: '*/14 * * * *'
   workflow_dispatch: # Déclencheur manuel possible
 
 jobs:

@@ -5,10 +5,12 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
 export default function Checkout({ onNavigate }) {
-  const { cartItems, subtotal, clearCart, syncCart } = useCart();
+  const { cartItems, subtotal, clearCart, syncCartItem, removeFromCart } = useCart();
   const { formatPrice, settings } = useSettings();
   const { user } = useAuth();
   const { showToast } = useToast();
+
+  const [checkingCart, setCheckingCart] = useState(true);
 
   // Étape 1 : Infos Client
   const [customerName, setCustomerName] = useState(user ? `${user.first_name} ${user.last_name}` : '');
@@ -29,23 +31,6 @@ export default function Checkout({ onNavigate }) {
   const [paymentMethod, setPaymentMethod] = useState('wave');
   const [submitting, setSubmitting] = useState(false);
 
-  // Synchroniser le panier en direct avant validation de la commande
-  useEffect(() => {
-    async function verifyAndSync() {
-      if (syncCart) {
-        const result = await syncCart();
-        if (result && result.hasChanges) {
-          if (result.itemsRemoved) {
-            showToast('Certains articles indisponibles ont été retirés de votre panier.', 'warning');
-          } else if (result.priceUpdated || result.stockAdjusted) {
-            showToast('Les prix ou quantités de votre panier ont été actualisés en direct.', 'info');
-          }
-        }
-      }
-    }
-    verifyAndSync();
-  }, []);
-
   // Charger les zones de livraison
   useEffect(() => {
     async function loadZones() {
@@ -63,6 +48,71 @@ export default function Checkout({ onNavigate }) {
     loadZones();
   }, []);
 
+  // Le panier est conservé indéfiniment dans le navigateur. Si le client revient
+  // plusieurs jours après avoir ajouté un article, son prix ou son stock a pu
+  // changer entre-temps : on revérifie chaque article auprès du serveur avant
+  // d'afficher le récapitulatif, pour ne jamais montrer un total qui ne sera
+  // plus celui facturé à la validation de la commande.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function revalidateCart() {
+      if (cartItems.length === 0) {
+        setCheckingCart(false);
+        return;
+      }
+
+      const changes = [];
+
+      await Promise.all(cartItems.map(async (item) => {
+        try {
+          const res = await fetch(`/api/products/${item.id}`);
+          const data = await res.json();
+          if (cancelled) return;
+
+          if (!data.success || !data.product || !data.product.is_active) {
+            changes.push(`« ${item.name} » n'est plus disponible et a été retiré de votre panier.`);
+            removeFromCart(item.id);
+            return;
+          }
+
+          const { price, stock, name } = data.product;
+          const priceChanged = price !== item.price;
+          const stockDropped = stock < item.quantity;
+
+          if (priceChanged || stockDropped) {
+            syncCartItem(item.id, { price, stock, name });
+          }
+          if (priceChanged) {
+            changes.push(`Le prix de « ${name} » a changé : ${formatPrice(item.price)} → ${formatPrice(price)}.`);
+          }
+          if (stockDropped) {
+            if (stock === 0) {
+              changes.push(`« ${name} » est en rupture de stock, il a été retiré de votre panier.`);
+              removeFromCart(item.id);
+            } else {
+              changes.push(`Il ne reste que ${stock} unité(s) de « ${name} » — quantité ajustée dans votre panier.`);
+            }
+          }
+        } catch (err) {
+          console.error('Erreur de revalidation du panier :', err);
+        }
+      }));
+
+      if (!cancelled) {
+        if (changes.length > 0) {
+          changes.forEach(msg => showToast(msg, 'warning'));
+        }
+        setCheckingCart(false);
+      }
+    }
+
+    revalidateCart();
+    return () => { cancelled = true; };
+    // Volontairement exécuté une seule fois à l'arrivée sur la page de paiement.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (cartItems.length === 0) {
     return (
       <div className="section">
@@ -74,6 +124,16 @@ export default function Checkout({ onNavigate }) {
           <button className="btn btn-primary" onClick={() => onNavigate('/shop')}>
             Voir la boutique
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (checkingCart) {
+    return (
+      <div className="section">
+        <div className="container" style={{ textAlign: 'center', padding: '5rem 0', color: 'var(--text-muted)' }}>
+          Vérification des prix et du stock de vos articles...
         </div>
       </div>
     );

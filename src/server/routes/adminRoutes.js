@@ -2,7 +2,7 @@ import express from 'express';
 import { db } from '../db/connection.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/adminAuth.js';
-import { upload } from '../middleware/upload.js';
+import { upload, fileUrl } from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -14,16 +14,11 @@ router.use(authenticate, requireAdmin);
 // ==========================================
 router.get('/stats', async (req, res, next) => {
   try {
-    const now = new Date();
-    const todayStr = now.toISOString().slice(0, 10);
-    const sevenDaysAgoStr = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const startOfMonthStr = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-
     // Chiffre d'affaires
     const totalRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid'");
-    const todayRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND created_at >= ?", [todayStr]);
-    const weekRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND created_at >= ?", [sevenDaysAgoStr]);
-    const monthRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND created_at >= ?", [startOfMonthStr]);
+    const todayRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND DATE(created_at) = DATE('now')");
+    const weekRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND created_at >= DATE('now', '-7 days')");
+    const monthRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND created_at >= DATE('now', 'start of month')");
 
     // Commandes
     const totalOrdersRow = await db.queryOne('SELECT COUNT(*) as total FROM orders');
@@ -48,14 +43,14 @@ router.get('/stats', async (req, res, next) => {
 
     // Ventes des 7 derniers jours (uniquement les commandes payées et validées)
     const salesChart = await db.queryAll(`
-      SELECT SUBSTR(created_at, 1, 10) as date,
+      SELECT DATE(created_at) as date,
              COUNT(*) as order_count,
              COALESCE(SUM(total_amount), 0) as total_sales
       FROM orders
-      WHERE created_at >= ? AND payment_status = 'paid'
-      GROUP BY SUBSTR(created_at, 1, 10)
+      WHERE created_at >= DATE('now', '-7 days') AND payment_status = 'paid'
+      GROUP BY DATE(created_at)
       ORDER BY date ASC
-    `, [sevenDaysAgoStr]);
+    `);
 
     // Dernières commandes
     const recentOrders = await db.queryAll(`
@@ -66,7 +61,7 @@ router.get('/stats', async (req, res, next) => {
       LIMIT 8
     `);
 
-    // Meilleurs produits vendus (toutes les commandes non annulées)
+    // Meilleurs produits vendus
     const topProducts = await db.queryAll(`
       SELECT oi.product_id, oi.product_name, 
              SUM(oi.quantity) as total_sold,
@@ -193,7 +188,7 @@ router.post('/products', upload.array('images', 6), async (req, res, next) => {
     let imageIndex = 0;
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        const imageUrl = `/uploads/${file.filename}`;
+        const imageUrl = fileUrl(file);
         await db.execute(`
           INSERT INTO product_images (product_id, image_url, is_primary, display_order)
           VALUES (?, ?, ?, ?)
@@ -256,11 +251,11 @@ router.put('/products/:id', async (req, res, next) => {
     await db.execute(`
       UPDATE products
       SET name = COALESCE(?, name),
-          category_id = CASE WHEN ? = 1 THEN ? ELSE category_id END,
+          category_id = ?,
           description = COALESCE(?, description),
           short_description = COALESCE(?, short_description),
           price = COALESCE(?, price),
-          compare_price = CASE WHEN ? = 1 THEN ? ELSE compare_price END,
+          compare_price = ?,
           stock = COALESCE(?, stock),
           low_stock_threshold = COALESCE(?, low_stock_threshold),
           sku = COALESCE(?, sku),
@@ -272,12 +267,10 @@ router.put('/products/:id', async (req, res, next) => {
       WHERE id = ?
     `, [
       name,
-      category_id !== undefined ? 1 : 0,
-      category_id !== undefined ? (category_id ? parseInt(category_id, 10) : null) : null,
+      category_id !== undefined ? (category_id ? parseInt(category_id, 10) : null) : undefined,
       description,
       short_description,
       price !== undefined ? parseInt(price, 10) : undefined,
-      compare_price !== undefined ? 1 : 0,
       compare_price !== undefined ? (compare_price ? parseInt(compare_price, 10) : null) : null,
       stock !== undefined ? parseInt(stock, 10) : undefined,
       low_stock_threshold !== undefined ? parseInt(low_stock_threshold, 10) : undefined,
@@ -349,7 +342,7 @@ router.post('/products/:id/images', upload.array('images', 6), async (req, res, 
     let orderIndex = existingCount ? existingCount.count : 0;
 
     for (const file of files) {
-      const url = `/uploads/${file.filename}`;
+      const url = fileUrl(file);
       await db.execute(`
         INSERT INTO product_images (product_id, image_url, is_primary, display_order)
         VALUES (?, ?, ?, ?)
@@ -478,8 +471,11 @@ router.patch('/orders/:id/status', async (req, res, next) => {
     let stockWarning = null;
 
     await db.transaction(async (tx) => {
-      // 1. Si la commande est annulée et ne l'était pas avant, réapprovisionner le stock !
-      if (status === 'cancelled' && order.order_status !== 'cancelled') {
+      const wasCancelled = order.order_status === 'cancelled';
+      const willBeCancelled = status === 'cancelled';
+
+      // Annulation : la commande n'était pas annulée avant, elle l'est maintenant → réapprovisionner le stock.
+      if (willBeCancelled && !wasCancelled) {
         const items = await tx.queryAll('SELECT product_id, quantity FROM order_items WHERE order_id = ?', [orderId]);
         for (const it of items) {
           if (it.product_id) {
@@ -488,19 +484,20 @@ router.patch('/orders/:id/status', async (req, res, next) => {
         }
       }
 
-      // 2. Si une commande annulée est réactivée, décrémenter à nouveau le stock symétriquement !
-      if (order.order_status === 'cancelled' && status !== 'cancelled') {
-        const items = await tx.queryAll('SELECT product_id, quantity FROM order_items WHERE order_id = ?', [orderId]);
+      // Réactivation : la commande était annulée (stock réapprovisionné) et repart vers un autre statut
+      // → il faut re-décrémenter le stock, sinon les articles apparaissent disponibles deux fois.
+      if (wasCancelled && !willBeCancelled) {
+        const items = await tx.queryAll('SELECT product_id, product_name, quantity FROM order_items WHERE order_id = ?', [orderId]);
         for (const it of items) {
-          if (it.product_id) {
-            const prod = await tx.queryOne('SELECT name, stock FROM products WHERE id = ?', [it.product_id]);
-            if (prod) {
-              if (prod.stock < it.quantity) {
-                stockWarning = `Attention : le stock pour "${prod.name}" était insuffisant (${prod.stock} restant(s), ${it.quantity} réclamé(s)). Le stock a été ajusté à 0.`;
-              }
-              const newStock = Math.max(0, prod.stock - it.quantity);
-              await tx.execute('UPDATE products SET stock = ? WHERE id = ?', [newStock, it.product_id]);
-            }
+          if (!it.product_id) continue;
+          const res = await tx.execute(
+            'UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?',
+            [it.quantity, it.product_id, it.quantity]
+          );
+          if (res.changes === 0) {
+            // Stock insuffisant pour réactiver entièrement la commande : on continue quand même
+            // (l'admin a demandé ce changement de statut) mais on le signale clairement.
+            stockWarning = `Attention : stock insuffisant pour "${it.product_name}" — le réapprovisionnement au moment de l'annulation a été repris entre-temps.`;
           }
         }
       }
@@ -571,7 +568,7 @@ router.post('/categories', upload.single('image'), async (req, res, next) => {
       counter++;
     }
 
-    const finalImage = req.file ? `/uploads/${req.file.filename}` : (image_url || null);
+    const finalImage = req.file ? fileUrl(req.file) : (image_url || null);
 
     const result = await db.execute(`
       INSERT INTO categories (name, slug, description, image_url, display_order, is_active)
@@ -590,7 +587,7 @@ router.put('/categories/:id', upload.single('image'), async (req, res, next) => 
     const { name, description, display_order, is_active, image_url } = req.body;
     const catId = req.params.id;
 
-    const finalImage = req.file ? `/uploads/${req.file.filename}` : (image_url !== undefined ? image_url : undefined);
+    const finalImage = req.file ? fileUrl(req.file) : (image_url !== undefined ? image_url : undefined);
 
     await db.execute(`
       UPDATE categories
@@ -804,6 +801,45 @@ router.put('/settings', async (req, res, next) => {
     });
 
     res.json({ success: true, message: 'Paramètres mis à jour avec succès.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ==========================================
+// 10. MESSAGES DU FORMULAIRE DE CONTACT
+// ==========================================
+router.get('/contacts', async (req, res, next) => {
+  try {
+    const contacts = await db.queryAll(`
+      SELECT id, name, email, phone, message, is_read, created_at
+      FROM contacts
+      ORDER BY created_at DESC
+    `);
+    const unreadRow = await db.queryOne('SELECT COUNT(*) as count FROM contacts WHERE is_read = 0');
+    const unreadCount = unreadRow ? Number(unreadRow.count) : 0;
+
+    res.json({ success: true, contacts, unreadCount });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch('/contacts/:id/read', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await db.execute('UPDATE contacts SET is_read = 1 WHERE id = ?', [id]);
+    res.json({ success: true, message: 'Message marqué comme lu.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete('/contacts/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await db.execute('DELETE FROM contacts WHERE id = ?', [id]);
+    res.json({ success: true, message: 'Message supprimé.' });
   } catch (err) {
     next(err);
   }

@@ -11,6 +11,7 @@ export default function Contact({ onNavigate }) {
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
   const [whatsappUrl, setWhatsappUrl] = useState(null);
 
   const handleSubmit = async (e) => {
