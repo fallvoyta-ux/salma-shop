@@ -3,7 +3,7 @@ import { useCart } from '../context/CartContext';
 import { useSettings } from '../context/SettingsContext';
 
 export default function CartDrawer({ onNavigate }) {
-  const { cartItems, updateQuantity, removeFromCart, subtotal, isDrawerOpen, closeDrawer } = useCart();
+  const { cartItems, updateQuantity, removeFromCart, subtotal, isDrawerOpen, closeDrawer, cartNotification, clearCartNotification } = useCart();
   const { formatPrice, settings } = useSettings();
 
   if (!isDrawerOpen) return null;
@@ -24,6 +24,19 @@ export default function CartDrawer({ onNavigate }) {
             ✕
           </button>
         </div>
+
+        {/* Notification de mise à jour des prix/stocks réels */}
+        {cartNotification && (
+          <div style={{ background: '#eff6ff', borderBottom: '1px solid #bfdbfe', padding: '0.65rem 1.25rem', fontSize: '0.82rem', color: '#1e40af', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>🔄 {cartNotification}</span>
+            <button
+              onClick={clearCartNotification}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', color: '#1e40af', marginLeft: '0.5rem' }}
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* Barre de gratuité livraison Dakar */}
         {subtotal > 0 && (

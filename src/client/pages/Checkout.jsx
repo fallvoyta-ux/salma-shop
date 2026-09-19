@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
 export default function Checkout({ onNavigate }) {
-  const { cartItems, subtotal, clearCart } = useCart();
+  const { cartItems, subtotal, clearCart, syncCart } = useCart();
   const { formatPrice, settings } = useSettings();
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -28,6 +28,23 @@ export default function Checkout({ onNavigate }) {
   // Étape 4 & 5 : Paiement
   const [paymentMethod, setPaymentMethod] = useState('wave');
   const [submitting, setSubmitting] = useState(false);
+
+  // Synchroniser le panier en direct avant validation de la commande
+  useEffect(() => {
+    async function verifyAndSync() {
+      if (syncCart) {
+        const result = await syncCart();
+        if (result && result.hasChanges) {
+          if (result.itemsRemoved) {
+            showToast('Certains articles indisponibles ont été retirés de votre panier.', 'warning');
+          } else if (result.priceUpdated || result.stockAdjusted) {
+            showToast('Les prix ou quantités de votre panier ont été actualisés en direct.', 'info');
+          }
+        }
+      }
+    }
+    verifyAndSync();
+  }, []);
 
   // Charger les zones de livraison
   useEffect(() => {

@@ -140,6 +140,10 @@ export async function initSchema() {
   }
 }
 
+function normalizeParams(params) {
+  return (Array.isArray(params) ? params : [params]).map(v => v === undefined ? null : v);
+}
+
 /**
  * Abstraction unifiée pour requêtes préparées (PostgreSQL & SQLite)
  */
@@ -153,7 +157,7 @@ export const db = {
   },
 
   async queryAll(sql, params = []) {
-    const flatParams = Array.isArray(params) ? params : [params];
+    const flatParams = normalizeParams(params);
 
     if (isPostgres) {
       const pgSql = convertSqlForPg(sql);
@@ -167,7 +171,7 @@ export const db = {
   },
 
   async queryOne(sql, params = []) {
-    const flatParams = Array.isArray(params) ? params : [params];
+    const flatParams = normalizeParams(params);
 
     if (isPostgres) {
       const pgSql = convertSqlForPg(sql);
@@ -181,7 +185,7 @@ export const db = {
   },
 
   async execute(sql, params = []) {
-    const flatParams = Array.isArray(params) ? params : [params];
+    const flatParams = normalizeParams(params);
 
     if (isPostgres) {
       const pgSql = convertSqlForPg(sql);
@@ -220,19 +224,19 @@ export const db = {
         // Objet transactionnel dédié exécutant TOUTES les requêtes sur CE client unique
         const tx = {
           async queryAll(sql, params = []) {
-            const flatParams = Array.isArray(params) ? params : [params];
+            const flatParams = normalizeParams(params);
             const pgSql = convertSqlForPg(sql);
             const res = await client.query(pgSql, flatParams);
             return res.rows;
           },
           async queryOne(sql, params = []) {
-            const flatParams = Array.isArray(params) ? params : [params];
+            const flatParams = normalizeParams(params);
             const pgSql = convertSqlForPg(sql);
             const res = await client.query(pgSql, flatParams);
             return res.rows.length > 0 ? res.rows[0] : null;
           },
           async execute(sql, params = []) {
-            const flatParams = Array.isArray(params) ? params : [params];
+            const flatParams = normalizeParams(params);
             const pgSql = convertSqlForPg(sql);
             const res = await client.query(pgSql, flatParams);
             const lastId = res.rows && res.rows.length > 0 && res.rows[0].id !== undefined 

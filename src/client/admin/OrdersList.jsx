@@ -78,7 +78,11 @@ export default function OrdersList({ onNavigate }) {
       });
       const data = await res.json();
       if (data.success) {
-        showToast(data.message, 'success');
+        if (data.warning) {
+          showToast(data.warning, 'warning', 6000);
+        } else {
+          showToast(data.message, 'success');
+        }
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, order_status: newStatus } : o));
         if (selectedOrder && selectedOrder.id === orderId) {
           setSelectedOrder(prev => ({ ...prev, order_status: newStatus }));

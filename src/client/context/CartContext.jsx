@@ -13,6 +13,7 @@ export function CartProvider({ children }) {
   });
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [cartNotification, setCartNotification] = useState(null);
 
   // Sauvegarder dans le localStorage à chaque modification
   useEffect(() => {
@@ -22,6 +23,82 @@ export function CartProvider({ children }) {
       console.error('Erreur sauvegarde panier localStorage:', e);
     }
   }, [cartItems]);
+
+  // Synchroniser le panier avec les prix et stocks réels de l'API
+  const syncCart = async () => {
+    if (!cartItems || cartItems.length === 0) {
+      return { success: true, hasChanges: false, items: [] };
+    }
+
+    try {
+      const res = await fetch('/api/products/verify-cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: cartItems })
+      });
+      const data = await res.json();
+
+      if (data.success && data.hasChanges) {
+        let itemsRemoved = false;
+        let priceUpdated = false;
+        let stockAdjusted = false;
+
+        const updatedCart = [];
+
+        for (const item of data.items) {
+          if (!item.isAvailable || item.quantity <= 0) {
+            itemsRemoved = true;
+            continue;
+          }
+          if (item.priceChanged) priceUpdated = true;
+          if (item.stockChanged) stockAdjusted = true;
+
+          updatedCart.push({
+            id: item.id,
+            name: item.name,
+            slug: item.slug,
+            price: item.price,
+            compare_price: item.compare_price,
+            image: item.image,
+            stock: item.stock,
+            sku: item.sku,
+            quantity: item.quantity
+          });
+        }
+
+        setCartItems(updatedCart);
+
+        let noticeMsg = '';
+        if (itemsRemoved) noticeMsg = 'Certains articles indisponibles ont été retirés de votre panier.';
+        else if (priceUpdated || stockAdjusted) noticeMsg = 'Votre panier a été synchronisé avec les prix et stocks en direct.';
+
+        if (noticeMsg) {
+          setCartNotification(noticeMsg);
+        }
+
+        return {
+          success: true,
+          hasChanges: true,
+          priceUpdated,
+          stockAdjusted,
+          itemsRemoved,
+          items: updatedCart
+        };
+      }
+
+      return { success: true, hasChanges: false, items: cartItems };
+    } catch (err) {
+      console.error('Erreur synchronisation panier:', err);
+      return { success: false, error: err };
+    }
+  };
+
+  // Synchronisation automatique au premier chargement si le panier n'est pas vide
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      syncCart();
+    }
+  }, []);
 
   const addToCart = (product, quantity = 1) => {
     const qty = Math.max(1, parseInt(quantity, 10) || 1);
@@ -90,8 +167,13 @@ export function CartProvider({ children }) {
     localStorage.removeItem('teranga_cart');
   };
 
-  const openDrawer = () => setIsDrawerOpen(true);
+  const openDrawer = () => {
+    setIsDrawerOpen(true);
+    syncCart();
+  };
+
   const closeDrawer = () => setIsDrawerOpen(false);
+  const clearCartNotification = () => setCartNotification(null);
 
   // Sous-total
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -106,6 +188,9 @@ export function CartProvider({ children }) {
       updateQuantity,
       removeFromCart,
       clearCart,
+      syncCart,
+      cartNotification,
+      clearCartNotification,
       subtotal,
       totalCount,
       isDrawerOpen,

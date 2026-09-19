@@ -32,6 +32,7 @@ export function ToastProvider({ children }) {
             <span>
               {toast.type === 'success' && '✓ '}
               {toast.type === 'error' && '✕ '}
+              {toast.type === 'warning' && '⚠ '}
               {toast.type === 'info' && 'ℹ '}
               {toast.message}
             </span>

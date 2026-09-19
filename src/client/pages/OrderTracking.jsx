@@ -197,7 +197,7 @@ export default function OrderTracking({ onNavigate }) {
             </div>
 
             {/* Articles */}
-            <h4 style={{ fontSize: '1.05rem', marginBottom: '1rem', color: 'var(--dark)' }}>Articles</h4>
+            <h4 style={{ fontSize: '1.05rem', marginBottom: '1rem', color: 'var(--dark)' }}>Articles commandés</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
               {orderData.items.map((it) => (
                 <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 1rem', background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '0.9rem' }}>
@@ -205,6 +205,19 @@ export default function OrderTracking({ onNavigate }) {
                   <span style={{ fontWeight: 700 }}>{formatPrice(it.subtotal)}</span>
                 </div>
               ))}
+            </div>
+
+            {/* Assistance WhatsApp */}
+            <div style={{ marginTop: '2rem', textAlign: 'center', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+              <a
+                href={`https://wa.me/${(settings.contact_whatsapp || settings.contact_phone || '221773030303').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Bonjour Salma Shop, je vous contacte concernant ma commande n° ${orderData.order.order_number}.`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-outline"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#10b981', borderColor: '#10b981' }}
+              >
+                💬 Contacter le service client sur WhatsApp
+              </a>
             </div>
           </div>
         )}

@@ -14,11 +14,16 @@ router.use(authenticate, requireAdmin);
 // ==========================================
 router.get('/stats', async (req, res, next) => {
   try {
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    const sevenDaysAgoStr = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const startOfMonthStr = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+
     // Chiffre d'affaires
     const totalRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid'");
-    const todayRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND DATE(created_at) = DATE('now')");
-    const weekRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND created_at >= DATE('now', '-7 days')");
-    const monthRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND created_at >= DATE('now', 'start of month')");
+    const todayRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND created_at >= ?", [todayStr]);
+    const weekRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND created_at >= ?", [sevenDaysAgoStr]);
+    const monthRevRow = await db.queryOne("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND created_at >= ?", [startOfMonthStr]);
 
     // Commandes
     const totalOrdersRow = await db.queryOne('SELECT COUNT(*) as total FROM orders');
@@ -43,14 +48,14 @@ router.get('/stats', async (req, res, next) => {
 
     // Ventes des 7 derniers jours (uniquement les commandes payées et validées)
     const salesChart = await db.queryAll(`
-      SELECT DATE(created_at) as date,
+      SELECT SUBSTR(created_at, 1, 10) as date,
              COUNT(*) as order_count,
              COALESCE(SUM(total_amount), 0) as total_sales
       FROM orders
-      WHERE created_at >= DATE('now', '-7 days') AND payment_status = 'paid'
-      GROUP BY DATE(created_at)
+      WHERE created_at >= ? AND payment_status = 'paid'
+      GROUP BY SUBSTR(created_at, 1, 10)
       ORDER BY date ASC
-    `);
+    `, [sevenDaysAgoStr]);
 
     // Dernières commandes
     const recentOrders = await db.queryAll(`
@@ -61,14 +66,14 @@ router.get('/stats', async (req, res, next) => {
       LIMIT 8
     `);
 
-    // Meilleurs produits vendus
+    // Meilleurs produits vendus (toutes les commandes non annulées)
     const topProducts = await db.queryAll(`
       SELECT oi.product_id, oi.product_name, 
              SUM(oi.quantity) as total_sold,
              SUM(oi.subtotal) as total_revenue
       FROM order_items oi
       JOIN orders o ON o.id = oi.order_id
-      WHERE o.payment_status = 'paid' OR o.order_status != 'cancelled'
+      WHERE o.order_status != 'cancelled'
       GROUP BY oi.product_id, oi.product_name
       ORDER BY total_sold DESC
       LIMIT 5
@@ -158,7 +163,7 @@ router.post('/products', upload.array('images', 6), async (req, res, next) => {
     }
 
     // Génération du SKU si non fourni
-    const finalSku = sku ? sku.trim().toUpperCase() : `TRG-${Date.now().toString().slice(-6)}`;
+    const finalSku = sku ? sku.trim().toUpperCase() : `SLM-${Date.now().toString().slice(-6)}`;
 
     const result = await db.execute(`
       INSERT INTO products (
@@ -251,11 +256,11 @@ router.put('/products/:id', async (req, res, next) => {
     await db.execute(`
       UPDATE products
       SET name = COALESCE(?, name),
-          category_id = ?,
+          category_id = CASE WHEN ? = 1 THEN ? ELSE category_id END,
           description = COALESCE(?, description),
           short_description = COALESCE(?, short_description),
           price = COALESCE(?, price),
-          compare_price = ?,
+          compare_price = CASE WHEN ? = 1 THEN ? ELSE compare_price END,
           stock = COALESCE(?, stock),
           low_stock_threshold = COALESCE(?, low_stock_threshold),
           sku = COALESCE(?, sku),
@@ -267,10 +272,12 @@ router.put('/products/:id', async (req, res, next) => {
       WHERE id = ?
     `, [
       name,
-      category_id !== undefined ? (category_id ? parseInt(category_id, 10) : null) : undefined,
+      category_id !== undefined ? 1 : 0,
+      category_id !== undefined ? (category_id ? parseInt(category_id, 10) : null) : null,
       description,
       short_description,
       price !== undefined ? parseInt(price, 10) : undefined,
+      compare_price !== undefined ? 1 : 0,
       compare_price !== undefined ? (compare_price ? parseInt(compare_price, 10) : null) : null,
       stock !== undefined ? parseInt(stock, 10) : undefined,
       low_stock_threshold !== undefined ? parseInt(low_stock_threshold, 10) : undefined,
@@ -365,9 +372,9 @@ router.patch('/products/images/:imageId/set-primary', async (req, res, next) => 
       return res.status(404).json({ success: false, message: 'Image introuvable.' });
     }
 
-    await db.transaction(async () => {
-      await db.execute('UPDATE product_images SET is_primary = 0 WHERE product_id = ?', [img.product_id]);
-      await db.execute('UPDATE product_images SET is_primary = 1 WHERE id = ?', [img.id]);
+    await db.transaction(async (tx) => {
+      await tx.execute('UPDATE product_images SET is_primary = 0 WHERE product_id = ?', [img.product_id]);
+      await tx.execute('UPDATE product_images SET is_primary = 1 WHERE id = ?', [img.id]);
     });
 
     res.json({ success: true, message: 'Photo principale mise à jour.' });
@@ -468,21 +475,44 @@ router.patch('/orders/:id/status', async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Commande introuvable.' });
     }
 
-    await db.transaction(async () => {
-      // Si la commande est annulée et ne l'était pas avant, réapprovisionner le stock !
+    let stockWarning = null;
+
+    await db.transaction(async (tx) => {
+      // 1. Si la commande est annulée et ne l'était pas avant, réapprovisionner le stock !
       if (status === 'cancelled' && order.order_status !== 'cancelled') {
-        const items = await db.queryAll('SELECT product_id, quantity FROM order_items WHERE order_id = ?', [orderId]);
+        const items = await tx.queryAll('SELECT product_id, quantity FROM order_items WHERE order_id = ?', [orderId]);
         for (const it of items) {
           if (it.product_id) {
-            await db.execute('UPDATE products SET stock = stock + ? WHERE id = ?', [it.quantity, it.product_id]);
+            await tx.execute('UPDATE products SET stock = stock + ? WHERE id = ?', [it.quantity, it.product_id]);
           }
         }
       }
 
-      await db.execute('UPDATE orders SET order_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [status, orderId]);
+      // 2. Si une commande annulée est réactivée, décrémenter à nouveau le stock symétriquement !
+      if (order.order_status === 'cancelled' && status !== 'cancelled') {
+        const items = await tx.queryAll('SELECT product_id, quantity FROM order_items WHERE order_id = ?', [orderId]);
+        for (const it of items) {
+          if (it.product_id) {
+            const prod = await tx.queryOne('SELECT name, stock FROM products WHERE id = ?', [it.product_id]);
+            if (prod) {
+              if (prod.stock < it.quantity) {
+                stockWarning = `Attention : le stock pour "${prod.name}" était insuffisant (${prod.stock} restant(s), ${it.quantity} réclamé(s)). Le stock a été ajusté à 0.`;
+              }
+              const newStock = Math.max(0, prod.stock - it.quantity);
+              await tx.execute('UPDATE products SET stock = ? WHERE id = ?', [newStock, it.product_id]);
+            }
+          }
+        }
+      }
+
+      await tx.execute('UPDATE orders SET order_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [status, orderId]);
     });
 
-    res.json({ success: true, message: `Statut de la commande mis à jour: ${status}` });
+    res.json({
+      success: true,
+      message: `Statut de la commande mis à jour: ${status}`,
+      warning: stockWarning
+    });
   } catch (err) {
     next(err);
   }
@@ -763,9 +793,9 @@ router.put('/settings', async (req, res, next) => {
   try {
     const updates = req.body; // Objet clé -> valeur
 
-    await db.transaction(async () => {
+    await db.transaction(async (tx) => {
       for (const [key, value] of Object.entries(updates)) {
-        await db.execute(`
+        await tx.execute(`
           INSERT INTO settings (key, value, updated_at)
           VALUES (?, ?, CURRENT_TIMESTAMP)
           ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP

@@ -250,10 +250,16 @@ export default function ProductDetail({ slug, onNavigate }) {
             {/* Note moyenne & référence SKU */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.25rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f59e0b', fontWeight: 700 }}>
-                <span>★</span> {product.average_rating || 5.0} ({product.review_count || 0} avis)
+                {product.review_count > 0 ? (
+                  <>
+                    <span>★</span> {Number(product.average_rating || 5).toFixed(1)} ({product.review_count} avis)
+                  </>
+                ) : (
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Aucun avis pour l'instant</span>
+                )}
               </div>
               <div>•</div>
-              <div>Réf : <strong>{product.sku || 'TRG-001'}</strong></div>
+              <div>Réf : <strong>{product.sku || 'SLM-001'}</strong></div>
               <div>•</div>
               <div>
                 {isOutOfStock ? (

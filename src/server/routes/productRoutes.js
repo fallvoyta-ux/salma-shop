@@ -11,9 +11,17 @@ router.get('/featured', async (req, res, next) => {
              COALESCE(
                (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
                (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1)
-             ) as primary_image
+             ) as primary_image,
+             COALESCE(r.avg_rating, 0) as average_rating,
+             COALESCE(r.review_count, 0) as review_count
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
+      LEFT JOIN (
+        SELECT product_id, ROUND(AVG(rating), 1) as avg_rating, COUNT(*) as review_count
+        FROM reviews
+        WHERE status = 'approved'
+        GROUP BY product_id
+      ) r ON r.product_id = p.id
       WHERE p.is_active = 1 AND p.is_featured = 1
       ORDER BY p.id DESC
       LIMIT 8
@@ -33,9 +41,17 @@ router.get('/new-arrivals', async (req, res, next) => {
              COALESCE(
                (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
                (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1)
-             ) as primary_image
+             ) as primary_image,
+             COALESCE(r.avg_rating, 0) as average_rating,
+             COALESCE(r.review_count, 0) as review_count
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
+      LEFT JOIN (
+        SELECT product_id, ROUND(AVG(rating), 1) as avg_rating, COUNT(*) as review_count
+        FROM reviews
+        WHERE status = 'approved'
+        GROUP BY product_id
+      ) r ON r.product_id = p.id
       WHERE p.is_active = 1
       ORDER BY p.created_at DESC
       LIMIT 8
@@ -55,9 +71,17 @@ router.get('/promotions', async (req, res, next) => {
              COALESCE(
                (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
                (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1)
-             ) as primary_image
+             ) as primary_image,
+             COALESCE(r.avg_rating, 0) as average_rating,
+             COALESCE(r.review_count, 0) as review_count
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
+      LEFT JOIN (
+        SELECT product_id, ROUND(AVG(rating), 1) as avg_rating, COUNT(*) as review_count
+        FROM reviews
+        WHERE status = 'approved'
+        GROUP BY product_id
+      ) r ON r.product_id = p.id
       WHERE p.is_active = 1 AND (p.is_promo = 1 OR p.compare_price > p.price)
       ORDER BY p.id DESC
       LIMIT 8
@@ -160,7 +184,9 @@ router.get('/', async (req, res, next) => {
     const selectQuery = `
       SELECT p.*, c.name as category_name, c.slug as category_slug,
              pi.image_url as primary_image,
-             COALESCE(sales_stats.total_sold, 0) as total_sold
+             COALESCE(sales_stats.total_sold, 0) as total_sold,
+             COALESCE(r.avg_rating, 0) as average_rating,
+             COALESCE(r.review_count, 0) as review_count
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
       LEFT JOIN product_images pi ON pi.id = (
@@ -171,6 +197,12 @@ router.get('/', async (req, res, next) => {
         FROM order_items 
         GROUP BY product_id
       ) sales_stats ON sales_stats.product_id = p.id
+      LEFT JOIN (
+        SELECT product_id, ROUND(AVG(rating), 1) as avg_rating, COUNT(*) as review_count
+        FROM reviews
+        WHERE status = 'approved'
+        GROUP BY product_id
+      ) r ON r.product_id = p.id
       ${whereClause}
       ORDER BY ${orderBy}
       LIMIT ? OFFSET ?
@@ -257,7 +289,7 @@ router.get('/:slug', async (req, res, next) => {
         images,
         reviews,
         review_count: reviewStats && reviewStats.review_count ? parseInt(reviewStats.review_count, 10) : 0,
-        average_rating: reviewStats && reviewStats.average_rating != null ? parseFloat(Number(reviewStats.average_rating).toFixed(1)) : 5.0,
+        average_rating: reviewStats && reviewStats.average_rating != null ? parseFloat(Number(reviewStats.average_rating).toFixed(1)) : 0,
         parsed_specifications: parsedSpecs
       }
     });
@@ -296,6 +328,78 @@ router.get('/:slug/related', async (req, res, next) => {
     `, [product.category_id, product.id]);
 
     res.json({ success: true, products: related });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Vérifier et synchroniser le panier en direct (prix et stock réels)
+router.post('/verify-cart', async (req, res, next) => {
+  try {
+    const { items = [] } = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.json({ success: true, items: [], hasChanges: false });
+    }
+
+    let hasChanges = false;
+    const verified = [];
+
+    for (const it of items) {
+      const prodId = it.id || it.productId || it.product_id;
+      if (!prodId) continue;
+
+      const product = await db.queryOne(`
+        SELECT p.id, p.name, p.slug, p.price, p.compare_price, p.stock, p.sku, p.is_active,
+               COALESCE(
+                 (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
+                 (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1)
+               ) as primary_image
+        FROM products p
+        WHERE p.id = ?
+      `, [prodId]);
+
+      if (!product || product.is_active !== 1) {
+        hasChanges = true;
+        verified.push({
+          id: prodId,
+          isAvailable: false,
+          reason: !product ? 'deleted' : 'inactive'
+        });
+        continue;
+      }
+
+      const availableStock = Math.max(0, product.stock);
+      const requestedQty = parseInt(it.quantity, 10) || 1;
+      const validQty = Math.min(requestedQty, availableStock);
+
+      const priceChanged = product.price !== it.price;
+      const stockChanged = validQty !== requestedQty;
+
+      if (priceChanged || stockChanged) {
+        hasChanges = true;
+      }
+
+      verified.push({
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        price: product.price,
+        compare_price: product.compare_price,
+        stock: product.stock,
+        sku: product.sku,
+        image: product.primary_image,
+        quantity: validQty,
+        isAvailable: availableStock > 0,
+        priceChanged,
+        stockChanged
+      });
+    }
+
+    res.json({
+      success: true,
+      items: verified,
+      hasChanges
+    });
   } catch (err) {
     next(err);
   }

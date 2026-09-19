@@ -50,15 +50,7 @@ router.get('/', async (req, res, next) => {
     const settings = { ...DEFAULT_SETTINGS };
     for (const r of rows) {
       if (ALLOWED_SETTING_KEYS.has(r.key)) {
-        if (r.key === 'store_subtitle' && r.value && r.value.includes('Chic Ladies')) {
-          settings[r.key] = DEFAULT_SETTINGS.store_subtitle;
-        } else if (r.key === 'store_slogan' && r.value && r.value.toLowerCase().includes('budget')) {
-          settings[r.key] = DEFAULT_SETTINGS.store_slogan;
-        } else if (r.key === 'announcement_bar' && r.value && r.value.includes('Vente Privée')) {
-          settings[r.key] = DEFAULT_SETTINGS.announcement_bar;
-        } else {
-          settings[r.key] = r.value;
-        }
+        settings[r.key] = r.value;
       }
     }
 
