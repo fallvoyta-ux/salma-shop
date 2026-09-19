@@ -12,7 +12,7 @@ export const notificationService = {
     
     let paymentText = order.payment_method ? order.payment_method.toUpperCase() : 'WAVE';
     if (order.payment_method === 'wave') {
-      paymentText = `🌊 WAVE (Transfert vers ${config.storePhone || '+221 77 201 86 97'})`;
+      paymentText = '🌊 WAVE (Paiement officiel Groupe SALMA FALL)';
     } else if (order.payment_method === 'orange_money') {
       paymentText = `🟠 ORANGE MONEY (Transfert vers ${config.storePhone || '+221 77 201 86 97'})`;
     } else if (order.payment_method === 'cash_on_delivery') {
@@ -20,12 +20,13 @@ export const notificationService = {
     }
 
     if (isMobileMoney) {
-      return `✅ *PAIEMENT ENVOYÉ AVEC SUCCÈS SUR WAVE (+221 77 201 86 97)*\n` +
+      const providerTitle = order.payment_method === 'orange_money' ? 'ORANGE MONEY' : 'WAVE';
+      return `✅ *PAIEMENT ENVOYÉ AVEC SUCCÈS SUR ${providerTitle} (GROUPE SALMA FALL)*\n` +
         `🛍️ *COMMANDE - GLOBAL BUSINESS SERVICES GRP SF*\n` +
         `━━━━━━━━━━━━━━━━━━━\n` +
         `📦 *N° Commande* : ${order.order_number}\n` +
         `💰 *MONTANT ENVOYÉ* : ${(order.total_amount || 0).toLocaleString('fr-FR')} FCFA\n` +
-        `📱 *Bénéficiaire Wave* : Salma Shop (+221 77 201 86 97)\n` +
+        `📱 *Bénéficiaire* : Groupe SALMA FALL (+221 77 201 86 97)\n` +
         `━━━━━━━━━━━━━━━━━━━\n` +
         `👤 *Client* : ${order.customer_name || 'Client'}\n` +
         `📞 *Téléphone* : ${order.customer_phone || 'N/A'}\n` +
@@ -35,8 +36,8 @@ export const notificationService = {
         `🛒 *Articles commandés* :\n${itemsText}\n\n` +
         `🚚 *Frais de livraison* : ${(order.delivery_fee || 0).toLocaleString('fr-FR')} FCFA\n` +
         `━━━━━━━━━━━━━━━━━━━\n` +
-        `Bonjour Salma Shop / Global Business Services Grp SF ! 👋\n` +
-        `J'ai bien envoyé mon règlement de ${(order.total_amount || 0).toLocaleString('fr-FR')} FCFA sur votre compte Wave (+221 77 201 86 97) avec succès. ✅\n` +
+        `Bonjour Groupe SALMA FALL / Salma Shop ! 👋\n` +
+        `J'ai bien validé mon règlement de ${(order.total_amount || 0).toLocaleString('fr-FR')} FCFA sur votre compte Wave avec succès. ✅\n` +
         `Merci de me confirmer la bonne réception et de préparer ma livraison ! 💜🕊️🌹`;
     }
 

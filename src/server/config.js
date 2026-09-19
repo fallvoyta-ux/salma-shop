@@ -32,7 +32,9 @@ export const config = {
   paymentMode: process.env.PAYMENT_MODE || 'test', // 'test' ou 'live'
   wave: {
     apiKey: process.env.WAVE_API_KEY || '',
-    businessId: process.env.WAVE_BUSINESS_ID || '',
+    businessId: process.env.WAVE_BUSINESS_ID || 'M_5iS6VUrJnTx-',
+    merchantUrl: process.env.WAVE_MERCHANT_URL || 'https://pay.wave.com/m/M_5iS6VUrJnTx-/c/sn/',
+    merchantName: 'Groupe SALMA FALL',
     webhookSecret: process.env.WAVE_WEBHOOK_SECRET || ''
   },
   orangeMoney: {

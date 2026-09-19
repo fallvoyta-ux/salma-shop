@@ -68,20 +68,26 @@ export const paymentService = {
         }
       }
 
-      instructions = `Transfert Wave de ${amount.toLocaleString('fr-FR')} FCFA vers ${config.storeName} (${config.storePhone}).`;
+      if (!waveLaunchUrl) {
+        waveLaunchUrl = config.wave.merchantUrl || 'https://pay.wave.com/m/M_5iS6VUrJnTx-/c/sn/';
+        checkoutUrl = waveLaunchUrl;
+      }
+
+      instructions = `Paiement direct Wave de ${amount.toLocaleString('fr-FR')} FCFA vers Groupe SALMA FALL.`;
 
       await db.execute(`
         INSERT INTO payments (order_id, provider, transaction_id, amount, currency, status, raw_response)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, [order.id, 'wave', transactionId, amount, currency, 'pending', JSON.stringify({ isLive, provider: 'wave' })]);
+      `, [order.id, 'wave', transactionId, amount, currency, 'pending', JSON.stringify({ isLive, provider: 'wave', merchantUrl: waveLaunchUrl })]);
 
       return {
         success: true,
         provider: 'wave',
         transactionId,
         checkoutUrl: waveLaunchUrl,
-        waveAppDeepLink: 'wave://',
-        recipientName: config.storeName,
+        waveLaunchUrl,
+        waveMerchantUrl: waveLaunchUrl,
+        recipientName: 'Groupe SALMA FALL',
         recipientPhone: config.storePhone,
         recipientWhatsApp: config.storeWhatsApp,
         amount,

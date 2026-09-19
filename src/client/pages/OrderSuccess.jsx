@@ -48,41 +48,38 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
   const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
   const isMobile = isAndroid || isIOS;
 
-  const waveAppLink = isAndroid
-    ? 'intent:#Intent;package=com.wave.personal;action=android.intent.action.VIEW;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.wave.personal;end'
-    : 'wave://';
+  const waveMerchantUrl = 'https://pay.wave.com/m/M_5iS6VUrJnTx-/c/sn/';
+  const waveAppLink = waveMerchantUrl;
   const omUssdUrl = `tel:*144*1*1*${whatsappPhone}*${totalAmount}%23`;
 
-  // Détection auto_wave depuis l'URL pour ouverture directe sur mobile
+  // Détection auto_wave depuis l'URL pour ouverture directe sur mobile ou navigateur
   const [autoWaveTriggered, setAutoWaveTriggered] = useState(false);
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     if ((searchParams.get('auto_wave') === '1' || searchParams.get('auto_wave') === 'true') && !autoWaveTriggered) {
       setAutoWaveTriggered(true);
-      if (isMobile) {
-        const timer = setTimeout(() => {
-          window.location.href = waveAppLink;
-        }, 400);
-        return () => clearTimeout(timer);
-      }
+      const timer = setTimeout(() => {
+        window.location.href = waveMerchantUrl;
+      }, 500);
+      return () => clearTimeout(timer);
     }
-  }, [waveAppLink, isMobile, autoWaveTriggered]);
+  }, [waveMerchantUrl, autoWaveTriggered]);
 
   // Message WhatsApp d'envoi avec succès
   const isMobileMoney = paymentMethod === 'wave' || paymentMethod === 'orange_money';
   const whatsappMsg = isMobileMoney
-    ? `✅ *PAIEMENT ENVOYÉ AVEC SUCCÈS SUR WAVE (+221 77 201 86 97)*\n` +
+    ? `✅ *PAIEMENT ENVOYÉ AVEC SUCCÈS SUR WAVE (GROUPE SALMA FALL)*\n` +
       `🛍️ *COMMANDE - GLOBAL BUSINESS SERVICES GRP SF*\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `📦 *N° Commande* : ${orderNumber}\n` +
       `💰 *MONTANT ENVOYÉ* : ${totalAmount.toLocaleString('fr-FR')} FCFA\n` +
-      `📱 *Bénéficiaire Wave* : Salma Shop (+221 77 201 86 97)\n` +
+      `📱 *Bénéficiaire Wave* : Groupe SALMA FALL (+221 77 201 86 97)\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `👤 *Client* : ${order ? order.customer_name : 'Client'}\n` +
       `📍 *Livraison* : ${order ? (order.delivery_city + ', ' + order.delivery_address) : 'Dakar'}\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
-      `Bonjour Salma Shop / Global Business Services Grp SF ! 👋\n` +
-      `J'ai bien envoyé mon règlement de ${totalAmount.toLocaleString('fr-FR')} FCFA sur votre compte Wave (+221 77 201 86 97) avec succès. ✅\n` +
+      `Bonjour Groupe SALMA FALL / Salma Shop ! 👋\n` +
+      `J'ai bien validé mon règlement de ${totalAmount.toLocaleString('fr-FR')} FCFA sur votre compte Wave officiel avec succès. ✅\n` +
       `Merci de me confirmer la bonne réception et de préparer ma livraison ! 💜🕊️🌹`
     : `Bonjour ${settings.store_name || 'Global Business Services Grp SF'} ! 👋\n\n` +
       `Je viens d'effectuer la commande *${orderNumber}* sur votre boutique en ligne.\n` +
@@ -179,7 +176,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
               }}
             >
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.2)', padding: '4px 14px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 700, marginBottom: '1rem' }}>
-                🌊 PAIEMENT DIRECT SUR WAVE (+221 77 201 86 97)
+                🌊 PAIEMENT OFFICIEL WAVE MARCHAND
               </div>
 
               <h2 style={{ fontSize: '1.65rem', color: '#fff', marginBottom: '0.5rem', fontWeight: 800 }}>
@@ -187,10 +184,10 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
               </h2>
 
               <p style={{ fontSize: '0.95rem', opacity: 0.95, maxWidth: '520px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
-                Transférez votre règlement sur le compte Wave de <strong>Salma Shop (Global Business Services Grp SF)</strong> :
+                Réglez directement votre commande sur le compte Wave officiel de <strong>Groupe SALMA FALL</strong> :
               </p>
 
-              {/* Carte Coordonnées Wave Salma Shop */}
+              {/* Carte Bénéficiaire Marchand Wave */}
               <div
                 style={{
                   background: '#fff',
@@ -203,33 +200,17 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                 }}
               >
                 <div style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>
-                  Numéro Wave & WhatsApp Officiel
+                  Bénéficiaire Wave Officiel
                 </div>
-                <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#0284c7', fontFamily: 'var(--font-heading)', letterSpacing: '2px', marginBottom: '4px' }}>
-                  77 201 86 97
+                <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0284c7', fontFamily: 'var(--font-heading)', marginBottom: '4px' }}>
+                  Groupe SALMA FALL
                 </div>
                 <div style={{ fontSize: '0.92rem', color: '#334155', fontWeight: 700, marginBottom: '0.35rem' }}>
-                  Bénéficiaire : <strong>Salma Shop / Global Business Services Grp SF</strong>
+                  Service Client : <strong>+221 77 201 86 97</strong> • <strong>76 251 11 12</strong>
                 </div>
-                <div style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: '1.25rem' }}>
-                  Ligne directe secondaire : <strong>76 251 11 12</strong>
+                <div style={{ fontSize: '0.82rem', color: '#15803d', fontWeight: 700 }}>
+                  ✓ Compte Marchand Certifié Wave
                 </div>
-
-                <button
-                  type="button"
-                  onClick={handleCopyNumber}
-                  className="btn btn-primary btn-block"
-                  style={{
-                    background: '#00B2FE',
-                    borderColor: '#00B2FE',
-                    color: '#fff',
-                    fontWeight: 800,
-                    fontSize: '1rem',
-                    padding: '0.75rem 1rem'
-                  }}
-                >
-                  {copied ? '✓ Numéro 77 201 86 97 copié !' : `📋 Copier le numéro (${displayPhone})`}
-                </button>
               </div>
 
               {/* Étapes simples */}
@@ -245,16 +226,17 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                   lineHeight: 1.6
                 }}
               >
-                <div style={{ fontWeight: 800, marginBottom: '8px' }}>Instructions de validation :</div>
-                <div>1️⃣ Cliquez sur le bouton bleu ci-dessous pour ouvrir l'application <strong>Wave</strong>.</div>
-                <div>2️⃣ Envoyez <strong>{formatPrice(totalAmount)}</strong> au <strong>77 201 86 97</strong>.</div>
-                <div>3️⃣ Cliquez sur le bouton vert pour envoyer votre <strong>message d'envoi avec succès</strong> sur WhatsApp (+221 77 201 86 97) !</div>
+                <div style={{ fontWeight: 800, marginBottom: '8px' }}>Comment valider votre paiement :</div>
+                <div>1️⃣ Cliquez sur le bouton bleu ci-dessous pour ouvrir directement la page <strong>Groupe SALMA FALL</strong> sur Wave.</div>
+                <div>2️⃣ Saisissez simplement le montant (<strong>{formatPrice(totalAmount)}</strong>) et validez votre règlement.</div>
+                <div>3️⃣ Dès confirmation dans Wave, cliquez sur le bouton vert WhatsApp pour nous transmettre votre message d'envoi réussi !</div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxWidth: '430px', margin: '0 auto' }}>
                 <a
-                  href={waveAppLink}
-                  onClick={() => handleCopyNumber()}
+                  href="https://pay.wave.com/m/M_5iS6VUrJnTx-/c/sn/"
+                  target="_blank"
+                  rel="noreferrer"
                   className="btn btn-lg"
                   style={{
                     background: '#fff',
@@ -271,7 +253,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                     boxShadow: '0 6px 20px rgba(0,0,0,0.18)'
                   }}
                 >
-                  <span style={{ fontSize: '1.35rem' }}>🌊</span> Ouvrir l'application Wave de Salma Shop
+                  <span style={{ fontSize: '1.35rem' }}>🌊</span> Payer avec Wave (Groupe SALMA FALL)
                 </a>
 
                 <a

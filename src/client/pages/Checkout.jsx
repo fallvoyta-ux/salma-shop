@@ -110,35 +110,24 @@ export default function Checkout({ onNavigate }) {
       if (data.success && data.order) {
         clearCart();
 
-        // Pour Wave et Orange Money : redirection directe vers le Wave de Salma Shop (+221 77 201 86 97)
-        if (paymentMethod === 'wave' || paymentMethod === 'orange_money') {
-          // 1. Copier le numéro Wave de Salma Shop dans le presse-papier
-          try {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-              await navigator.clipboard.writeText('77 201 86 97');
-            }
-          } catch (e) {
-            console.warn('Erreur copie presse-papier:', e);
-          }
+        // Pour Wave : Redirection directe vers le compte marchand officiel Wave de Groupe SALMA FALL
+        if (paymentMethod === 'wave') {
+          const waveMerchantUrl = 'https://pay.wave.com/m/M_5iS6VUrJnTx-/c/sn/';
+          showToast('✓ Commande enregistrée ! Ouverture de Wave Groupe SALMA FALL...', 'success');
 
-          showToast('✓ Commande enregistrée ! Numéro Wave (+221 77 201 86 97) copié. Ouverture de Wave...', 'success');
-
-          // 2. Détection mobile pour ouverture de l'application Wave
-          const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
-          const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
-          const waveAppLink = isAndroid
-            ? 'intent:#Intent;package=com.wave.personal;action=android.intent.action.VIEW;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.wave.personal;end'
-            : 'wave://';
-
-          // 3. Basculer vers la page de confirmation avec auto_wave
+          // Basculer vers la page de confirmation avec auto_wave
           onNavigate(`/order-confirmation/${data.order.order_number}?auto_wave=1`);
 
-          // 4. Lancer immédiatement l'app Wave sur mobile
-          if (isAndroid || isIOS) {
-            setTimeout(() => {
-              window.location.href = waveAppLink;
-            }, 350);
-          }
+          setTimeout(() => {
+            window.location.href = waveMerchantUrl;
+          }, 450);
+          return;
+        }
+
+        // Pour Orange Money
+        if (paymentMethod === 'orange_money') {
+          showToast('✓ Commande enregistrée ! Redirection vers la confirmation...', 'success');
+          onNavigate(`/order-confirmation/${data.order.order_number}`);
           return;
         }
 
