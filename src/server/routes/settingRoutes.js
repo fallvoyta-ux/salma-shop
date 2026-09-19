@@ -24,14 +24,41 @@ const ALLOWED_SETTING_KEYS = new Set([
   'store_logo'
 ]);
 
+const DEFAULT_SETTINGS = {
+  store_name: 'Global Business Services Grp SF',
+  store_subtitle: 'Groupe Salma Fall - Vente Articles Divers',
+  store_slogan: '« La Qualité fait la Différence 💜🕊️🌹 »',
+  store_description: 'Global Business Services Grp SF (Groupe Salma Fall) : Vente d’articles divers à Dakar, Sénégal. « La Qualité fait la Différence 💜🕊️🌹 ».',
+  store_phone: '+221 77 201 86 97',
+  store_phone_alt1: '+221 76 251 11 12',
+  store_phone_alt2: '+221 77 201 86 97',
+  store_whatsapp: '221772018697',
+  store_email: 'contact@salmashop.sn',
+  store_address: 'Dakar, Sénégal',
+  currency: 'FCFA',
+  announcement_bar: '✨ Global Business Services Grp SF • Groupe Salma Fall • « La Qualité fait la Différence 💜🕊️🌹 » • WhatsApp : +221 77 201 86 97 • 76 251 11 12',
+  announcement_active: 'true',
+  whatsapp_ordering_enabled: 'true',
+  free_shipping_threshold: '40000',
+  store_logo: '/logo.jpg'
+};
+
 // Récupérer tous les paramètres publics de la boutique
 router.get('/', async (req, res, next) => {
   try {
     const rows = await db.queryAll('SELECT key, value FROM settings');
-    const settings = {};
+    const settings = { ...DEFAULT_SETTINGS };
     for (const r of rows) {
       if (ALLOWED_SETTING_KEYS.has(r.key)) {
-        settings[r.key] = r.value;
+        if (r.key === 'store_subtitle' && r.value && r.value.includes('Chic Ladies')) {
+          settings[r.key] = DEFAULT_SETTINGS.store_subtitle;
+        } else if (r.key === 'store_slogan' && r.value && r.value.toLowerCase().includes('budget')) {
+          settings[r.key] = DEFAULT_SETTINGS.store_slogan;
+        } else if (r.key === 'announcement_bar' && r.value && r.value.includes('Vente Privée')) {
+          settings[r.key] = DEFAULT_SETTINGS.announcement_bar;
+        } else {
+          settings[r.key] = r.value;
+        }
       }
     }
 

@@ -188,13 +188,20 @@ router.post('/webhook/:provider', async (req, res) => {
 
     } else if (provider === 'paytech') {
       // Vérification signature PayTech
+      if (!config.paytech.apiKey || !config.paytech.apiSecret) {
+        if (IS_LIVE) {
+          console.error('🛑 Webhook PayTech refusé : clés non configurées.');
+          return res.status(503).json({ error: 'Webhook non configuré.' });
+        }
+      }
+
       if (config.paytech.apiKey && config.paytech.apiSecret) {
         const expectedApiKeySha = crypto.createHash('sha256').update(config.paytech.apiKey).digest('hex');
         const expectedApiSecretSha = crypto.createHash('sha256').update(config.paytech.apiSecret).digest('hex');
 
         if (
-          payload.api_key_sha256 !== expectedApiKeySha ||
-          payload.api_secret_sha256 !== expectedApiSecretSha
+          !safeCompare(payload.api_key_sha256, expectedApiKeySha) ||
+          !safeCompare(payload.api_secret_sha256, expectedApiSecretSha)
         ) {
           console.warn('⚠️ Webhook PayTech rejeté : clés de signature non valides');
           return res.status(401).json({ error: 'Signature PayTech non valide.' });
@@ -208,10 +215,16 @@ router.post('/webhook/:provider', async (req, res) => {
 
     } else if (provider === 'orange_money') {
       // Vérification clé marchande Orange Money IPN
-      if (config.orangeMoney.merchantKey) {
+      if (!config.orangeMoney.merchantKey) {
+        if (IS_LIVE) {
+          console.error('🛑 Webhook Orange Money refusé : ORANGE_MONEY_MERCHANT_KEY non configurée.');
+          return res.status(503).json({ error: 'Webhook non configuré.' });
+        }
+      } else {
         const authHeader = req.headers['authorization'] || req.headers['x-om-signature'] || payload?.merchant_key;
-        if (authHeader && !authHeader.includes(config.orangeMoney.merchantKey)) {
-          console.warn('⚠️ Webhook Orange Money rejeté : clé marchande incorrecte');
+        // Un en-tête ABSENT doit être refusé, pas laissé passer.
+        if (!authHeader || !String(authHeader).includes(config.orangeMoney.merchantKey)) {
+          console.warn('⚠️ Webhook Orange Money rejeté : clé marchande absente ou incorrecte');
           return res.status(401).json({ error: 'Authentification Orange Money refusée.' });
         }
       }

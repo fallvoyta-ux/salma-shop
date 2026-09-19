@@ -6,7 +6,7 @@ export default function AdminLayout({ currentPath, onNavigate, children }) {
   const { user, logout } = useAuth();
   const { settings } = useSettings();
 
-  const isCurrent = (path) => currentPath === path;
+  const isCurrent = (path) => currentPath === path || (path === '/admin/dashboard' && (currentPath === '/admin' || currentPath === '/admin/'));
 
   const navItems = [
     { path: '/admin/dashboard', icon: '📊', label: 'Tableau de bord' },
@@ -85,11 +85,13 @@ export default function AdminLayout({ currentPath, onNavigate, children }) {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div style={{ textAlign: 'right', fontSize: '0.85rem' }}>
-              <div style={{ fontWeight: 700, color: 'var(--dark)' }}>{user ? `${user.first_name} ${user.last_name}` : 'Administratrice'}</div>
+              <div style={{ fontWeight: 700, color: 'var(--dark)' }}>
+                {user && user.first_name ? `${user.first_name.charAt(0).toUpperCase() + user.first_name.slice(1)} ${user.last_name || ''}`.trim() : 'Salma Fall'}
+              </div>
               <div style={{ color: 'var(--success)' }}>Connecté • Rôle Admin</div>
             </div>
             <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
-              {user ? user.first_name.charAt(0) : 'S'}
+              {user && user.first_name ? user.first_name.charAt(0).toUpperCase() : 'S'}
             </div>
           </div>
         </header>

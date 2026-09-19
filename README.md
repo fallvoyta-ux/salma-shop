@@ -98,14 +98,14 @@ L'application est accessible sur :
 
 ---
 
-## 🔑 Identifiants de Démonstration
+## 🔑 Accès et Comptes Utilisateurs
 
 | Rôle | Email | Mot de Passe |
 | :--- | :--- | :--- |
-| **Administratrice** | `admin@salmashop.sn` | `AdminSalma2026!` |
-| **Cliente** | `client@salmashop.sn` | `ClientSalma123!` |
+| **Cliente Démo** | `client@salmashop.sn` | `ClientSalma123!` |
 
-*(Note : le compte historique `admin@terangashop.sn` reste également actif pour compatibilité)*
+> [!NOTE]
+> Le compte administrateur doit être créé et géré de façon sécurisée (via `npm run create-admin` ou les variables d'environnement) sans exposer de mot de passe par défaut dans le dépôt.
 
 ---
 

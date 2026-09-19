@@ -229,6 +229,32 @@ export default function Navbar({ currentPath, onNavigate }) {
                       </a>
 
                       <a
+                        href="/admin"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setUserMenuOpen(false);
+                          onNavigate('/admin');
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          padding: '0.5rem',
+                          background: '#f8fafc',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          color: '#7c3aed',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          textDecoration: 'none',
+                          marginTop: '0.5rem'
+                        }}
+                      >
+                        👑 Espace Administration
+                      </a>
+
+                      <a
                         href="/register"
                         onClick={(e) => {
                           e.preventDefault();

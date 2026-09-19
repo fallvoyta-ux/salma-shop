@@ -1,4 +1,5 @@
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
@@ -48,7 +49,7 @@ app.use((req, res, next) => {
 // Render / Railway placent l'application derrière un proxy inverse.
 // Sans cette ligne, express-rate-limit voit la même IP pour tous les visiteurs.
 app.set('trust proxy', 1);
-
+app.use(compression());
 
 // Configuration CORS sécurisée
 const allowedOrigins = [

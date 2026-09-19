@@ -28,17 +28,56 @@ import Terms from './pages/Terms';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 
 // Espace Administrateur
-import AdminLayout from './admin/AdminLayout';
-import AdminLogin from './admin/AdminLogin';
-import Dashboard from './admin/Dashboard';
-import ProductsList from './admin/ProductsList';
-import ProductForm from './admin/ProductForm';
-import CategoriesList from './admin/CategoriesList';
-import OrdersList from './admin/OrdersList';
-import CustomersList from './admin/CustomersList';
-import ReviewsList from './admin/ReviewsList';
-import DeliveryZones from './admin/DeliveryZones';
-import Settings from './admin/Settings';
+import { lazy, Suspense } from 'react';
+
+const AdminLayout = lazy(() => import('./admin/AdminLayout'));
+const AdminLogin = lazy(() => import('./admin/AdminLogin'));
+const Dashboard = lazy(() => import('./admin/Dashboard'));
+const ProductsList = lazy(() => import('./admin/ProductsList'));
+const ProductForm = lazy(() => import('./admin/ProductForm'));
+const CategoriesList = lazy(() => import('./admin/CategoriesList'));
+const OrdersList = lazy(() => import('./admin/OrdersList'));
+const CustomersList = lazy(() => import('./admin/CustomersList'));
+const ReviewsList = lazy(() => import('./admin/ReviewsList'));
+const DeliveryZones = lazy(() => import('./admin/DeliveryZones'));
+const Settings = lazy(() => import('./admin/Settings'));
+
+function AdminLoadingScreen({ message = "Chargement de l'espace administration..." }) {
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: '#0f172a',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#fff',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
+    }}>
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <div style={{
+          width: '52px',
+          height: '52px',
+          border: '4px solid rgba(124, 58, 237, 0.2)',
+          borderTopColor: 'var(--primary, #7c3aed)',
+          borderRadius: '50%',
+          margin: '0 auto 1.25rem',
+          animation: 'adminSpin 0.9s linear infinite'
+        }} />
+        <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#f8fafc', marginBottom: '0.4rem' }}>
+          Global Business Services Grp SF
+        </div>
+        <div style={{ fontSize: '0.88rem', color: '#94a3b8' }}>
+          {message}
+        </div>
+      </div>
+      <style>{`
+        @keyframes adminSpin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  );
+}
 
 function AppContent() {
   const { user, isAdmin, loading } = useAuth();
@@ -65,9 +104,18 @@ function AppContent() {
   // Détection des routes Admin
   const isAdminRoute = pathname.startsWith('/admin');
 
-  // Si route Admin (hors login) et non admin connecté
-  if (isAdminRoute && pathname !== '/admin/login' && !loading && !isAdmin) {
-    return <AdminLogin onNavigate={navigate} />;
+  // Si route Admin (hors page login explicite)
+  if (isAdminRoute && pathname !== '/admin/login') {
+    if (loading) {
+      return <AdminLoadingScreen message="Vérification des accès administrateur..." />;
+    }
+    if (!isAdmin) {
+      return (
+        <Suspense fallback={<AdminLoadingScreen message="Chargement du formulaire de connexion..." />}>
+          <AdminLogin onNavigate={navigate} />
+        </Suspense>
+      );
+    }
   }
 
   // Rendu de la page courante
@@ -196,7 +244,11 @@ function AppContent() {
 
   // Pour les pages admin, ne pas afficher le Navbar & Footer client
   if (isAdminRoute) {
-    return pageComponent;
+    return (
+      <Suspense fallback={<AdminLoadingScreen />}>
+        {pageComponent}
+      </Suspense>
+    );
   }
 
   return (

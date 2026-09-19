@@ -181,6 +181,7 @@ export default function Footer({ onNavigate }) {
             <ul className="footer-links-list">
               <li><a href="/track-order" onClick={(e) => { e.preventDefault(); onNavigate('/track-order'); }}>📦 Suivre ma Commande</a></li>
               <li><a href="/account" onClick={(e) => { e.preventDefault(); onNavigate('/account'); }}>👤 Mon Espace Client</a></li>
+              <li><a href="/admin" onClick={(e) => { e.preventDefault(); onNavigate('/admin'); }} style={{ color: 'var(--primary)', fontWeight: 700 }}>👑 Accès Administration</a></li>
               <li><a href="/about" onClick={(e) => { e.preventDefault(); onNavigate('/about'); }}>ℹ️ À Propos de l'Entreprise</a></li>
               <li><a href="/contact" onClick={(e) => { e.preventDefault(); onNavigate('/contact'); }}>📞 Contactez-nous</a></li>
               <li><a href="/terms" onClick={(e) => { e.preventDefault(); onNavigate('/terms'); }}>📜 Conditions de Vente</a></li>
