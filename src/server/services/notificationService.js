@@ -37,7 +37,7 @@ export const notificationService = {
         `🚚 *Frais de livraison* : ${(order.delivery_fee || 0).toLocaleString('fr-FR')} FCFA\n` +
         `━━━━━━━━━━━━━━━━━━━\n` +
         `Bonjour Groupe SALMA FALL / Salma Shop ! 👋\n` +
-        `J'ai bien validé mon règlement de ${(order.total_amount || 0).toLocaleString('fr-FR')} FCFA sur votre compte Wave avec succès. ✅\n` +
+        `J'ai bien validé mon règlement de ${(order.total_amount || 0).toLocaleString('fr-FR')} FCFA sur votre compte ${providerTitle} avec succès. ✅\n` +
         `Merci de me confirmer la bonne réception et de préparer ma livraison ! 💜🕊️🌹`;
     }
 
