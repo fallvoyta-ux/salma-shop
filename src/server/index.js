@@ -45,6 +45,10 @@ app.use((req, res, next) => {
   res.removeHeader('X-Powered-By');
   next();
 });
+// Render / Railway placent l'application derrière un proxy inverse.
+// Sans cette ligne, express-rate-limit voit la même IP pour tous les visiteurs.
+app.set('trust proxy', 1);
+
 
 // Configuration CORS sécurisée
 const allowedOrigins = [
@@ -55,16 +59,17 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
+    // Requêtes sans origine (app mobile, curl, même domaine) : autorisées
     if (!origin) return callback(null, true);
-    if (
-      config.env !== 'production' ||
-      allowedOrigins.includes(origin) ||
-      origin.includes('localhost') ||
-      origin.includes('127.0.0.1') ||
-      origin.endsWith('.onrender.com')
-    ) {
+
+    if (config.env !== 'production') {
       return callback(null, true);
     }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
     return callback(new Error('Origine CORS non autorisée'));
   },
   credentials: true
@@ -126,6 +131,17 @@ const paymentLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false
 });
+// 4. Limitation anti-spam sur les avis et messages de contact
+const publicWriteLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  message: {
+    success: false,
+    message: 'Trop d’envois depuis votre appareil. Veuillez réessayer dans une heure.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 // Enregistrement des routes API
 app.use('/api/auth', authLimiter, authRoutes);
@@ -133,11 +149,11 @@ app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', orderLimiter, orderRoutes);
 app.use('/api/payments', paymentLimiter, paymentRoutes);
-app.use('/api/reviews', reviewRoutes);
+app.use('/api/reviews', publicWriteLimiter, reviewRoutes);
 app.use('/api/delivery-zones', deliveryRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/contact', contactRoutes);
+app.use('/api/contact', publicWriteLimiter, contactRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

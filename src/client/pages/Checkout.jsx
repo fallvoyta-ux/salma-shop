@@ -124,10 +124,16 @@ export default function Checkout({ onNavigate }) {
           return;
         }
 
-        // Pour Orange Money
+        // Pour Orange Money : Redirection directe vers le compte Max it officiel de Groupe SALMA FALL
         if (paymentMethod === 'orange_money') {
-          showToast('✓ Commande enregistrée ! Redirection vers la confirmation...', 'success');
-          onNavigate(`/order-confirmation/${data.order.order_number}`);
+          const omQrUrl = 'https://qrcode.orange.sn/dcnYNsnEy5lJG79Nh7DAxLPcCEX';
+          showToast('✓ Commande enregistrée ! Ouverture d’Orange Money (Max it)...', 'success');
+
+          onNavigate(`/order-confirmation/${data.order.order_number}?auto_om=1`);
+
+          setTimeout(() => {
+            window.location.href = omQrUrl;
+          }, 450);
           return;
         }
 

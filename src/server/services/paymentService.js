@@ -98,30 +98,28 @@ export const paymentService = {
     }
 
     if (paymentMethod === 'orange_money') {
+      const omQrUrl = config.orangeMoney.qrUrl || 'https://qrcode.orange.sn/dcnYNsnEy5lJG79Nh7DAxLPcCEX';
       const ussdCode = `*144*1*1*${config.storeWhatsApp}*${amount}#`;
       const omTelUrl = `tel:${encodeURIComponent(ussdCode)}`;
-      checkoutUrl = omTelUrl;
+      checkoutUrl = omQrUrl;
 
-      if (isLive && config.orangeMoney.merchantKey) {
-        // En mode réel avec l'API Orange Money Web Payment
-        instructions = `Validez votre paiement de ${amount.toLocaleString('fr-FR')} FCFA sur votre téléphone Orange Money (#144# ou application Orange Money).`;
-      } else {
-        instructions = `Composer le code USSD ${ussdCode} ou transférer ${amount.toLocaleString('fr-FR')} FCFA au ${config.storePhone} (${config.storeName}).`;
-      }
+      instructions = `Paiement direct Orange Money (Max it) de ${amount.toLocaleString('fr-FR')} FCFA vers Groupe SALMA FALL (${config.storePhone}).`;
 
       await db.execute(`
         INSERT INTO payments (order_id, provider, transaction_id, amount, currency, status, raw_response)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, [order.id, 'orange_money', transactionId, amount, currency, 'pending', JSON.stringify({ isLive, provider: 'orange_money', ussdCode })]);
+      `, [order.id, 'orange_money', transactionId, amount, currency, 'pending', JSON.stringify({ isLive, provider: 'orange_money', omQrUrl, ussdCode })]);
 
       return {
         success: true,
         provider: 'orange_money',
         transactionId,
-        checkoutUrl,
+        checkoutUrl: omQrUrl,
+        omQrUrl,
+        qrImage: config.orangeMoney.qrImage || '/orange_money_qr_clean.png',
         ussdCode,
         omTelUrl,
-        recipientName: config.storeName,
+        recipientName: 'Groupe SALMA FALL',
         recipientPhone: config.storePhone,
         recipientWhatsApp: config.storeWhatsApp,
         amount,

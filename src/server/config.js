@@ -16,7 +16,7 @@ export const config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   dbFilePath: path.resolve(rootDir, process.env.DB_FILE_PATH || 'database.sqlite'),
   uploadsDir: path.resolve(rootDir, 'uploads'),
-  
+
   // Identité Officielle Global Business Services Grp SF (Groupe Salma Fall)
   storeName: process.env.STORE_NAME || 'Global Business Services Grp SF',
   storeSubtitle: 'Groupe Salma Fall - Vente Articles Divers',
@@ -40,7 +40,9 @@ export const config = {
   orangeMoney: {
     clientId: process.env.ORANGE_MONEY_CLIENT_ID || '',
     clientSecret: process.env.ORANGE_MONEY_CLIENT_SECRET || '',
-    merchantKey: process.env.ORANGE_MONEY_MERCHANT_KEY || ''
+    merchantKey: process.env.ORANGE_MONEY_MERCHANT_KEY || '',
+    qrUrl: process.env.ORANGE_MONEY_QR_URL || 'https://qrcode.orange.sn/dcnYNsnEy5lJG79Nh7DAxLPcCEX',
+    qrImage: '/orange_money_qr_clean.png'
   },
   paytech: {
     apiKey: process.env.PAYTECH_API_KEY || '',
@@ -50,13 +52,28 @@ export const config = {
 
 export function validateConfig() {
   const isProd = config.env === 'production';
-  if (isProd) {
-    if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'salma_shop_chic_ladies_dakar_secret_jwt_2026') {
-      console.warn('⚠️ AVERTISSEMENT DE SÉCURITÉ : JWT_SECRET utilise une clé par défaut en production.');
+  if (!isProd) return;
+
+  const fatal = [];
+
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+    fatal.push('JWT_SECRET manquant ou trop court (32 caractères minimum requis).');
+  }
+
+  if (config.paymentMode === 'live') {
+    if (!process.env.WAVE_WEBHOOK_SECRET) {
+      fatal.push('PAYMENT_MODE=live mais WAVE_WEBHOOK_SECRET est absent.');
     }
-    if (!process.env.DATABASE_URL) {
-      console.warn('⚠️ AVERTISSEMENT : Aucune DATABASE_URL fournie en production. SQLite local utilisé.');
-    }
+  }
+
+  if (fatal.length > 0) {
+    console.error('\n🛑 DÉMARRAGE ANNULÉ — configuration de production invalide :');
+    fatal.forEach(m => console.error(`   • ${m}`));
+    process.exit(1);
+  }
+
+  if (!process.env.DATABASE_URL) {
+    console.warn('⚠️ Aucune DATABASE_URL : SQLite local utilisé, les données seront perdues au redémarrage.');
   }
 }
 

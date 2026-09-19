@@ -48,21 +48,25 @@ export async function seedDatabase() {
     }
   }
 
-  // 3. Utilisateurs
-  const adminSalmaPasswordHash = await bcrypt.hash('AdminSalma2026!', 10);
-  const clientSalmaPasswordHash = await bcrypt.hash('ClientSalma123!', 10);
+  // 3. Administrateur : créé UNIQUEMENT depuis les variables d'environnement.
+  // Aucun mot de passe ne doit jamais être écrit en dur dans le code source.
+  const adminEmail = (process.env.ADMIN_DEFAULT_EMAIL || '').trim().toLowerCase();
+  const adminPassword = process.env.ADMIN_DEFAULT_PASSWORD || '';
 
-  const usersToInsert = [
-    { fn: 'Salma', ln: 'Propriétaire', em: 'admin@salmashop.sn', ph: '+221 77 201 86 97', pw: adminSalmaPasswordHash, role: 'admin', ad: 'Dakar' },
-    { fn: 'Fatou', ln: 'Diop', em: 'client@salmashop.sn', ph: '+221 78 987 65 43', pw: clientSalmaPasswordHash, role: 'client', ad: 'Almadies' }
-  ];
-
-  for (const u of usersToInsert) {
-    await db.execute(`
-      INSERT INTO users (first_name, last_name, email, phone, password_hash, role, address, city, region)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'Dakar', 'Dakar')
-      ON CONFLICT(email) DO UPDATE SET password_hash = excluded.password_hash, role = excluded.role, phone = excluded.phone
-    `, [u.fn, u.ln, u.em, u.ph, u.pw, u.role, u.ad]);
+  if (adminEmail && adminPassword.length >= 10) {
+    const existingAdmin = await db.queryOne('SELECT id FROM users WHERE email = ?', [adminEmail]);
+    if (!existingAdmin) {
+      const adminHash = await bcrypt.hash(adminPassword, 12);
+      await db.execute(`
+        INSERT INTO users (first_name, last_name, email, phone, password_hash, role, address, city, region)
+        VALUES (?, ?, ?, ?, ?, 'admin', ?, 'Dakar', 'Dakar')
+      `, ['Salma', 'Propriétaire', adminEmail, process.env.STORE_PHONE || '', adminHash, 'Dakar']);
+      console.log(`✅ Compte administrateur créé : ${adminEmail}`);
+    } else {
+      console.log('ℹ️ Compte administrateur déjà existant, aucune modification.');
+    }
+  } else {
+    console.log('ℹ️ Aucun admin créé (définir ADMIN_DEFAULT_EMAIL et ADMIN_DEFAULT_PASSWORD).');
   }
 
   // 4. Catégories Complètes Demandées par l'Utilisatrice (Dessins d'articles façon Carrefour)

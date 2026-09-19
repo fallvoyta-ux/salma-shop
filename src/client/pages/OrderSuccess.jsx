@@ -49,37 +49,48 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
   const isMobile = isAndroid || isIOS;
 
   const waveMerchantUrl = 'https://pay.wave.com/m/M_5iS6VUrJnTx-/c/sn/';
+  const omQrUrl = 'https://qrcode.orange.sn/dcnYNsnEy5lJG79Nh7DAxLPcCEX';
   const waveAppLink = waveMerchantUrl;
   const omUssdUrl = `tel:*144*1*1*${whatsappPhone}*${totalAmount}%23`;
 
-  // Détection auto_wave depuis l'URL pour ouverture directe sur mobile ou navigateur
-  const [autoWaveTriggered, setAutoWaveTriggered] = useState(false);
+  // Détection auto_wave ou auto_om depuis l'URL pour ouverture directe sur mobile ou navigateur
+  const [autoRedirectTriggered, setAutoRedirectTriggered] = useState(false);
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
-    if ((searchParams.get('auto_wave') === '1' || searchParams.get('auto_wave') === 'true') && !autoWaveTriggered) {
-      setAutoWaveTriggered(true);
-      const timer = setTimeout(() => {
-        window.location.href = waveMerchantUrl;
-      }, 500);
-      return () => clearTimeout(timer);
+    if (!autoRedirectTriggered) {
+      if (searchParams.get('auto_wave') === '1' || searchParams.get('auto_wave') === 'true') {
+        setAutoRedirectTriggered(true);
+        const timer = setTimeout(() => {
+          window.location.href = waveMerchantUrl;
+        }, 500);
+        return () => clearTimeout(timer);
+      }
+      if (searchParams.get('auto_om') === '1' || searchParams.get('auto_om') === 'true') {
+        setAutoRedirectTriggered(true);
+        const timer = setTimeout(() => {
+          window.location.href = omQrUrl;
+        }, 500);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [waveMerchantUrl, autoWaveTriggered]);
+  }, [waveMerchantUrl, omQrUrl, autoRedirectTriggered]);
 
   // Message WhatsApp d'envoi avec succès
   const isMobileMoney = paymentMethod === 'wave' || paymentMethod === 'orange_money';
+  const providerTitle = paymentMethod === 'orange_money' ? 'ORANGE MONEY' : 'WAVE';
   const whatsappMsg = isMobileMoney
-    ? `✅ *PAIEMENT ENVOYÉ AVEC SUCCÈS SUR WAVE (GROUPE SALMA FALL)*\n` +
+    ? `✅ *PAIEMENT ENVOYÉ AVEC SUCCÈS SUR ${providerTitle} (GROUPE SALMA FALL)*\n` +
       `🛍️ *COMMANDE - GLOBAL BUSINESS SERVICES GRP SF*\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `📦 *N° Commande* : ${orderNumber}\n` +
       `💰 *MONTANT ENVOYÉ* : ${totalAmount.toLocaleString('fr-FR')} FCFA\n` +
-      `📱 *Bénéficiaire Wave* : Groupe SALMA FALL (+221 77 201 86 97)\n` +
+      `📱 *Bénéficiaire* : Groupe SALMA FALL (+221 77 201 86 97)\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `👤 *Client* : ${order ? order.customer_name : 'Client'}\n` +
       `📍 *Livraison* : ${order ? (order.delivery_city + ', ' + order.delivery_address) : 'Dakar'}\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `Bonjour Groupe SALMA FALL / Salma Shop ! 👋\n` +
-      `J'ai bien validé mon règlement de ${totalAmount.toLocaleString('fr-FR')} FCFA sur votre compte Wave officiel avec succès. ✅\n` +
+      `J'ai bien validé mon règlement de ${totalAmount.toLocaleString('fr-FR')} FCFA sur votre compte ${providerTitle} officiel avec succès. ✅\n` +
       `Merci de me confirmer la bonne réception et de préparer ma livraison ! 💜🕊️🌹`
     : `Bonjour ${settings.store_name || 'Global Business Services Grp SF'} ! 👋\n\n` +
       `Je viens d'effectuer la commande *${orderNumber}* sur votre boutique en ligne.\n` +
@@ -162,8 +173,8 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
             N° de Commande : <span style={{ color: 'var(--primary)' }}>{orderNumber}</span>
           </div>
 
-          {/* SECTION DÉDIÉE PAIEMENT DIRECT SALMA SHOP (WAVE ET ORANGE MONEY) */}
-          {(paymentMethod === 'wave' || paymentMethod === 'orange_money') && (
+          {/* SECTION DÉDIÉE PAIEMENT DIRECT WAVE */}
+          {paymentMethod === 'wave' && (
             <div
               style={{
                 background: 'linear-gradient(135deg, #0284c7 0%, #00B2FE 100%)',
@@ -274,20 +285,144 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                 >
                   <span>💬</span> Envoyer le message d'envoi avec succès (+221 77 201 86 97)
                 </a>
+              </div>
+            </div>
+          )}
 
-                {paymentMethod === 'orange_money' && (
-                  <a
-                    href={omUssdUrl}
-                    style={{
-                      color: 'rgba(255,255,255,0.9)',
-                      fontSize: '0.82rem',
-                      textDecoration: 'underline',
-                      marginTop: '0.5rem'
-                    }}
-                  >
-                    Ou composer le code USSD Orange Money #144#
-                  </a>
-                )}
+          {/* SECTION DÉDIÉE PAIEMENT DIRECT ORANGE MONEY (MAX IT) */}
+          {paymentMethod === 'orange_money' && (
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #ea580c 0%, #ff7900 100%)',
+                color: '#fff',
+                padding: '2.25rem 2rem',
+                borderRadius: 'var(--radius-lg)',
+                boxShadow: '0 10px 30px rgba(255, 121, 0, 0.35)',
+                marginBottom: '2.5rem',
+                textAlign: 'center'
+              }}
+            >
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.2)', padding: '4px 14px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 700, marginBottom: '1rem' }}>
+                🟠 PAIEMENT OFFICIEL ORANGE MONEY (MAX IT)
+              </div>
+
+              <h2 style={{ fontSize: '1.65rem', color: '#fff', marginBottom: '0.5rem', fontWeight: 800 }}>
+                Montant à régler : {formatPrice(totalAmount)}
+              </h2>
+
+              <p style={{ fontSize: '0.95rem', opacity: 0.95, maxWidth: '520px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
+                Réglez directement votre commande via Orange Money sur le compte de <strong>Groupe SALMA FALL</strong> :
+              </p>
+
+              {/* Carte Bénéficiaire Orange Money avec QR Code */}
+              <div
+                style={{
+                  background: '#fff',
+                  color: '#9a3412',
+                  padding: '1.5rem',
+                  borderRadius: 'var(--radius-lg)',
+                  margin: '0 auto 1.5rem',
+                  maxWidth: '430px',
+                  boxShadow: '0 8px 25px rgba(0,0,0,0.12)'
+                }}
+              >
+                <div style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>
+                  Bénéficiaire Orange Money Officiel
+                </div>
+                <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#ea580c', fontFamily: 'var(--font-heading)', marginBottom: '4px' }}>
+                  Groupe SALMA FALL
+                </div>
+                <div style={{ fontSize: '0.92rem', color: '#334155', fontWeight: 700, marginBottom: '0.35rem' }}>
+                  Numéro Orange : <strong>+221 77 201 86 97</strong>
+                </div>
+
+                {/* QR Code Orange Money scannable */}
+                <div style={{ background: '#fff', padding: '8px', borderRadius: '12px', display: 'inline-block', margin: '0.75rem auto', border: '2px solid #ff7900' }}>
+                  <img
+                    src="/orange_money_qr_clean.png"
+                    alt="QR Code Orange Money Groupe SALMA FALL"
+                    style={{ width: '150px', height: '150px', display: 'block', borderRadius: '6px' }}
+                  />
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 600 }}>
+                  Scannez ce QR Code avec l'application Max it
+                </div>
+              </div>
+
+              {/* Étapes simples */}
+              <div
+                style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '1.25rem',
+                  maxWidth: '430px',
+                  margin: '0 auto 1.5rem',
+                  textAlign: 'left',
+                  fontSize: '0.92rem',
+                  lineHeight: 1.6
+                }}
+              >
+                <div style={{ fontWeight: 800, marginBottom: '8px' }}>Comment valider votre paiement :</div>
+                <div>1️⃣ Cliquez sur le bouton orange ci-dessous pour ouvrir directement <strong>Orange Money (Max it)</strong>.</div>
+                <div>2️⃣ Saisissez le montant de votre commande (<strong>{formatPrice(totalAmount)}</strong>) et validez avec votre code secret.</div>
+                <div>3️⃣ Dès confirmation reçue, cliquez sur le bouton vert WhatsApp ci-dessous pour nous envoyer votre reçu officiel !</div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxWidth: '430px', margin: '0 auto' }}>
+                <a
+                  href="https://qrcode.orange.sn/dcnYNsnEy5lJG79Nh7DAxLPcCEX"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-lg"
+                  style={{
+                    background: '#fff',
+                    color: '#ea580c',
+                    fontWeight: 900,
+                    fontSize: '1.05rem',
+                    padding: '0.95rem 1.5rem',
+                    borderRadius: 'var(--radius-md)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    border: 'none',
+                    boxShadow: '0 6px 20px rgba(0,0,0,0.18)'
+                  }}
+                >
+                  <span style={{ fontSize: '1.35rem' }}>🟠</span> Payer avec Orange Money (Max it)
+                </a>
+
+                <a
+                  href={finalWhatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-whatsapp btn-lg"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    fontSize: '1.05rem',
+                    fontWeight: 800,
+                    padding: '0.95rem 1.5rem',
+                    boxShadow: '0 6px 20px rgba(37, 211, 102, 0.4)'
+                  }}
+                >
+                  <span>💬</span> Envoyer le message d'envoi avec succès (+221 77 201 86 97)
+                </a>
+
+                <a
+                  href={omUssdUrl}
+                  style={{
+                    color: 'rgba(255,255,255,0.95)',
+                    fontSize: '0.88rem',
+                    textDecoration: 'underline',
+                    marginTop: '0.5rem',
+                    fontWeight: 700
+                  }}
+                >
+                  📱 Ou composer le code USSD direct : #144#
+                </a>
               </div>
             </div>
           )}

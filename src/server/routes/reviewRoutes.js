@@ -57,14 +57,17 @@ router.post('/product/:productId', optionalAuthenticate, async (req, res, next) 
 
     // Pour une boutique en production, on peut approuver directement ou mettre en pending.
     // Mettons 'approved' pour une expérience immédiate satisfaisante, avec modération possible dans /admin
+    const cleanComment = comment.trim().slice(0, 1000);
+    const cleanName = authorName.slice(0, 80);
+
     const result = await db.execute(`
       INSERT INTO reviews (product_id, user_id, user_name, rating, comment, status)
-      VALUES (?, ?, ?, ?, ?, 'approved')
-    `, [productId, userId, authorName, parsedRating, comment.trim()]);
+      VALUES (?, ?, ?, ?, ?, 'pending')
+    `, [productId, userId, cleanName, parsedRating, cleanComment]);
 
     res.status(201).json({
       success: true,
-      message: 'Merci beaucoup pour votre avis ! Il a bien été publié.',
+      message: 'Merci beaucoup pour votre avis ! Il sera publié après vérification.',
       reviewId: result.lastInsertRowid
     });
   } catch (err) {

@@ -3,6 +3,18 @@ import crypto from 'crypto';
 import { config } from '../config.js';
 import { db } from '../db/connection.js';
 import { paymentService } from '../services/paymentService.js';
+/**
+ * Comparaison à temps constant qui ne lève pas d'exception
+ * si les deux chaînes ont des longueurs différentes.
+ */
+function safeCompare(a, b) {
+  const bufA = Buffer.from(String(a || ''), 'utf8');
+  const bufB = Buffer.from(String(b || ''), 'utf8');
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+const IS_LIVE = config.paymentMode === 'live';
 
 const router = express.Router();
 
@@ -125,7 +137,14 @@ router.post('/webhook/:provider', async (req, res) => {
 
     // 1. Vérification spécifique par prestataire
     if (provider === 'wave') {
-      // Vérification signature Wave HMAC-SHA256
+      // ÉCHEC FERMÉ : en production, pas de secret = pas de webhook accepté.
+      if (!config.wave.webhookSecret) {
+        if (IS_LIVE) {
+          console.error('🛑 Webhook Wave refusé : WAVE_WEBHOOK_SECRET non configuré.');
+          return res.status(503).json({ error: 'Webhook non configuré.' });
+        }
+      }
+
       if (config.wave.webhookSecret) {
         const sigHeader = req.headers['wave-signature'] || req.headers['Wave-Signature'];
         if (!sigHeader) {
@@ -156,7 +175,7 @@ router.post('/webhook/:provider', async (req, res) => {
           .update(`${timestamp}.${rawBodyText}`)
           .digest('hex');
 
-        if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+        if (!safeCompare(signature, expectedSignature)) {
           console.warn('⚠️ Webhook Wave rejeté : signature falsifiée');
           return res.status(401).json({ error: 'Signature Wave falsifiée ou invalide.' });
         }
