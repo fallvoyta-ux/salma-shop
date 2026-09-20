@@ -5,7 +5,7 @@ import { useSettings } from '../context/SettingsContext';
 
 export default function Navbar({ currentPath, onNavigate }) {
   const { user, isAdmin, logout } = useAuth();
-  const { totalCount, totalAmount, openDrawer } = useCart();
+  const { totalCount, subtotal, openDrawer } = useCart();
   const { settings, formatPrice } = useSettings();
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -77,7 +77,7 @@ export default function Navbar({ currentPath, onNavigate }) {
 
       <header className="kahpoo-header">
       <div className="container">
-        <div className="kahpoo-header-main" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+        <div className="kahpoo-header-main">
           {/* EXTRÊME GAUCHE : LOGO GLOBAL BUSINESS SERVICES GRP SF */}
           <a
             href="/"
@@ -279,7 +279,7 @@ export default function Navbar({ currentPath, onNavigate }) {
             >
               <span>🛒</span>
               <span className="kahpoo-cart-badge">{totalCount}</span>
-              <span style={{ fontSize: '0.88rem' }}>{formatPrice(totalAmount)}</span>
+              <span style={{ fontSize: '0.88rem' }}>{formatPrice(subtotal)}</span>
             </button>
           </div>
         </div>

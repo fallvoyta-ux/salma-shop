@@ -228,7 +228,7 @@ export default function Checkout({ onNavigate }) {
         </div>
 
         <form onSubmit={handleSubmitOrder}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '3rem', alignItems: 'start' }}>
+          <div className="responsive-checkout-grid">
             {/* COLONNE GAUCHE : ÉTAPES FORMULAIRE */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               {/* Étape 1 : Coordonnées personnelles */}
@@ -238,7 +238,7 @@ export default function Checkout({ onNavigate }) {
                   Informations de Contact
                 </h3>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="responsive-form-grid">
                   <div className="form-group" style={{ gridColumn: 'span 2' }}>
                     <label className="form-label">Prénom & Nom complet *</label>
                     <input
@@ -284,7 +284,7 @@ export default function Checkout({ onNavigate }) {
                   Lieu de Livraison
                 </h3>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="responsive-form-grid">
                   <div className="form-group">
                     <label className="form-label">Région *</label>
                     <select
@@ -521,6 +521,7 @@ export default function Checkout({ onNavigate }) {
 
             {/* COLONNE DROITE : RÉCAPITULATIF DE LA COMMANDE */}
             <div
+              className="checkout-sticky-summary"
               style={{
                 background: '#fff',
                 padding: '2rem',

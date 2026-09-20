@@ -177,8 +177,8 @@ export default function ProductDetail({ slug, onNavigate }) {
           <span style={{ color: 'var(--dark)', fontWeight: 600 }}>{product.name}</span>
         </div>
 
-        {/* Détails Produit : 2 colonnes */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: '3.5rem', marginBottom: '4rem', alignItems: 'start' }}>
+        {/* Détails Produit : 2 colonnes sur desktop, 1 colonne sur mobile */}
+        <div className="responsive-product-detail-grid">
           {/* COLONNE GAUCHE : GALERIE PHOTOS */}
           <div>
             <div
@@ -243,7 +243,7 @@ export default function ProductDetail({ slug, onNavigate }) {
               </div>
             )}
 
-            <h1 style={{ fontSize: '2.2rem', lineHeight: 1.25, marginBottom: '0.75rem', color: 'var(--dark)' }}>
+            <h1 style={{ fontSize: 'clamp(1.4rem, 4.5vw, 2.2rem)', lineHeight: 1.25, marginBottom: '0.75rem', color: 'var(--dark)' }}>
               {product.name}
             </h1>
 
@@ -274,7 +274,7 @@ export default function ProductDetail({ slug, onNavigate }) {
 
             {/* Prix Simple en FCFA */}
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem', padding: '1.25rem 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', marginBottom: '1.5rem' }}>
-              <span style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--primary)', fontFamily: 'var(--font-heading)' }}>
+              <span style={{ fontSize: 'clamp(1.6rem, 5vw, 2.2rem)', fontWeight: 800, color: 'var(--primary)', fontFamily: 'var(--font-heading)' }}>
                 {formatPrice(product.price)}
               </span>
             </div>

@@ -37,8 +37,8 @@ export default function Categories({ onNavigate }) {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: '2rem'
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
+              gap: 'clamp(1rem, 3vw, 2rem)'
             }}
           >
             {categories.map((cat) => {

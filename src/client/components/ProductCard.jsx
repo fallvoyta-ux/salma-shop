@@ -87,7 +87,7 @@ export default function ProductCard({ product, onNavigate }) {
         </div>
 
         {/* Boutons d'action : Voir détail & Ajouter au panier */}
-        <div style={{ marginTop: '0.85rem', display: 'flex', gap: '0.5rem' }}>
+        <div className="product-card-actions">
           <button
             type="button"
             className="btn btn-primary"
@@ -114,8 +114,7 @@ export default function ProductCard({ product, onNavigate }) {
               borderRadius: 'var(--radius-md)',
               fontWeight: 700,
               padding: '0.6rem 0.85rem',
-              fontSize: '0.88rem',
-              whiteSpace: 'nowrap'
+              fontSize: '0.88rem'
             }}
           >
             Détails →

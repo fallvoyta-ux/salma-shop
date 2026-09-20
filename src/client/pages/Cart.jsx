@@ -64,96 +64,176 @@ export default function Cart({ onNavigate }) {
         </div>
 
         {/* Grille : Tableau du panier (gauche) + Résumé de commande (droite) */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr', gap: '3rem', alignItems: 'start' }}>
+        <div className="responsive-cart-grid">
           {/* Liste des articles */}
-          <div style={{ background: '#fff', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border)', fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                  <th style={{ padding: '1rem 1.5rem' }}>Produit</th>
-                  <th style={{ padding: '1rem' }}>Prix</th>
-                  <th style={{ padding: '1rem', textAlign: 'center' }}>Quantité</th>
-                  <th style={{ padding: '1rem', textAlign: 'right' }}>Sous-total</th>
-                  <th style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cartItems.map((item) => (
-                  <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    {/* Infos produit */}
-                    <td style={{ padding: '1.25rem 1.5rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                      <img
-                        src={item.image || 'https://images.unsplash.com/photo-1590736969955-71cc94801759?w=200&q=80'}
-                        alt={item.name}
-                        style={{ width: '64px', height: '64px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }}
-                      />
-                      <div>
-                        <a
-                          href={`/product/${item.slug}`}
-                          onClick={(e) => { e.preventDefault(); onNavigate(`/product/${item.slug}`); }}
-                          style={{ fontWeight: 700, color: 'var(--dark)', fontSize: '0.95rem' }}
-                        >
-                          {item.name}
-                        </a>
-                        {item.sku && (
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Réf : {item.sku}</div>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Prix unitaire */}
-                    <td style={{ padding: '1rem', fontWeight: 600 }}>
-                      {formatPrice(item.price)}
-                    </td>
-
-                    {/* Quantité +/- */}
-                    <td style={{ padding: '1rem', textAlign: 'center' }}>
-                      <div
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          border: '1px solid var(--border)',
-                          borderRadius: 'var(--radius-sm)',
-                          overflow: 'hidden'
-                        }}
-                      >
-                        <button
-                          style={{ width: '30px', height: '30px', background: '#f8fafc', border: 'none', cursor: 'pointer', fontWeight: 700 }}
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        >
-                          -
-                        </button>
-                        <span style={{ width: '36px', textAlign: 'center', fontWeight: 700, fontSize: '0.9rem' }}>
-                          {item.quantity}
-                        </span>
-                        <button
-                          style={{ width: '30px', height: '30px', background: '#f8fafc', border: 'none', cursor: 'pointer', fontWeight: 700 }}
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        >
-                          +
-                        </button>
-                      </div>
-                    </td>
-
-                    {/* Sous-total article */}
-                    <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 800, color: 'var(--dark)' }}>
-                      {formatPrice(item.price * item.quantity)}
-                    </td>
-
-                    {/* Supprimer */}
-                    <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
-                      <button
-                        style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.1rem' }}
-                        onClick={() => removeFromCart(item.id)}
-                        title="Supprimer"
-                      >
-                        ✕
-                      </button>
-                    </td>
+          <div>
+            {/* Version Bureau : Tableau complet */}
+            <div className="cart-desktop-view" style={{ background: '#fff', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border)', fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    <th style={{ padding: '1rem 1.5rem' }}>Produit</th>
+                    <th style={{ padding: '1rem' }}>Prix</th>
+                    <th style={{ padding: '1rem', textAlign: 'center' }}>Quantité</th>
+                    <th style={{ padding: '1rem', textAlign: 'right' }}>Sous-total</th>
+                    <th style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {cartItems.map((item) => (
+                    <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      {/* Infos produit */}
+                      <td style={{ padding: '1.25rem 1.5rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <img
+                          src={item.image || 'https://images.unsplash.com/photo-1590736969955-71cc94801759?w=200&q=80'}
+                          alt={item.name}
+                          style={{ width: '64px', height: '64px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }}
+                        />
+                        <div>
+                          <a
+                            href={`/product/${item.slug}`}
+                            onClick={(e) => { e.preventDefault(); onNavigate(`/product/${item.slug}`); }}
+                            style={{ fontWeight: 700, color: 'var(--dark)', fontSize: '0.95rem' }}
+                          >
+                            {item.name}
+                          </a>
+                          {item.sku && (
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Réf : {item.sku}</div>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Prix unitaire */}
+                      <td style={{ padding: '1rem', fontWeight: 600 }}>
+                        {formatPrice(item.price)}
+                      </td>
+
+                      {/* Quantité +/- */}
+                      <td style={{ padding: '1rem', textAlign: 'center' }}>
+                        <div
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-sm)',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          <button
+                            style={{ width: '30px', height: '30px', background: '#f8fafc', border: 'none', cursor: 'pointer', fontWeight: 700 }}
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          >
+                            -
+                          </button>
+                          <span style={{ width: '36px', textAlign: 'center', fontWeight: 700, fontSize: '0.9rem' }}>
+                            {item.quantity}
+                          </span>
+                          <button
+                            style={{ width: '30px', height: '30px', background: '#f8fafc', border: 'none', cursor: 'pointer', fontWeight: 700 }}
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          >
+                            +
+                          </button>
+                        </div>
+                      </td>
+
+                      {/* Sous-total article */}
+                      <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 800, color: 'var(--dark)' }}>
+                        {formatPrice(item.price * item.quantity)}
+                      </td>
+
+                      {/* Supprimer */}
+                      <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
+                        <button
+                          style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.1rem' }}
+                          onClick={() => removeFromCart(item.id)}
+                          title="Supprimer"
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Version Mobile : Cartes empilées ultra-lisibles */}
+            <div className="cart-mobile-view">
+              {cartItems.map((item) => (
+                <div key={item.id} className="cart-mobile-card">
+                  <div className="cart-mobile-card-top">
+                    <img
+                      src={item.image || 'https://images.unsplash.com/photo-1590736969955-71cc94801759?w=200&q=80'}
+                      alt={item.name}
+                      className="cart-mobile-thumb"
+                    />
+                    <div className="cart-mobile-info">
+                      <a
+                        href={`/product/${item.slug}`}
+                        onClick={(e) => { e.preventDefault(); onNavigate(`/product/${item.slug}`); }}
+                        className="cart-mobile-title"
+                      >
+                        {item.name}
+                      </a>
+                      <div className="cart-mobile-price">
+                        {formatPrice(item.price)} l'unité
+                      </div>
+                      {item.sku && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          Réf : {item.sku}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.25rem', padding: '4px' }}
+                      onClick={() => removeFromCart(item.id)}
+                      title="Supprimer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="cart-mobile-card-bottom">
+                    {/* Sélecteur de quantité tactile */}
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius-sm)',
+                        overflow: 'hidden',
+                        background: '#f8fafc'
+                      }}
+                    >
+                      <button
+                        style={{ width: '36px', height: '36px', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '1.1rem' }}
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      >
+                        -
+                      </button>
+                      <span style={{ width: '36px', textAlign: 'center', fontWeight: 700, fontSize: '0.95rem' }}>
+                        {item.quantity}
+                      </span>
+                      <button
+                        style={{ width: '36px', height: '36px', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '1.1rem' }}
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    {/* Sous-total item */}
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total</div>
+                      <div className="cart-mobile-subtotal">
+                        {formatPrice(item.price * item.quantity)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Résumé de commande */}

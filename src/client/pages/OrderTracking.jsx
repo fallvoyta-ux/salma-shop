@@ -62,7 +62,7 @@ export default function OrderTracking({ onNavigate }) {
         <div
           style={{
             background: '#fff',
-            padding: '2rem',
+            padding: 'clamp(1.25rem, 4vw, 2rem)',
             borderRadius: 'var(--radius-lg)',
             border: '1px solid var(--border)',
             boxShadow: 'var(--shadow-sm)',
@@ -73,13 +73,13 @@ export default function OrderTracking({ onNavigate }) {
             <input
               type="text"
               className="form-input"
-              style={{ flex: 1, minWidth: '240px' }}
+              style={{ flex: '1 1 220px', minWidth: '0' }}
               placeholder="Ex: CMD-2026-000101"
               value={orderNumberInput}
               onChange={(e) => setOrderNumberInput(e.target.value)}
               required
             />
-            <button type="submit" className="btn btn-primary" disabled={loading}>
+            <button type="submit" className="btn btn-primary" style={{ flex: '0 0 auto' }} disabled={loading}>
               {loading ? 'Recherche...' : 'Suivre ma commande →'}
             </button>
           </form>
@@ -96,7 +96,7 @@ export default function OrderTracking({ onNavigate }) {
           <div
             style={{
               background: '#fff',
-              padding: '2.5rem',
+              padding: 'clamp(1.25rem, 4vw, 2.5rem)',
               borderRadius: 'var(--radius-lg)',
               border: '1px solid var(--border)',
               boxShadow: 'var(--shadow-lg)'
@@ -173,7 +173,7 @@ export default function OrderTracking({ onNavigate }) {
             )}
 
             {/* Coordonnées de destination */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', background: 'var(--surface-alt)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '2rem', fontSize: '0.92rem' }}>
+            <div className="responsive-recap-grid" style={{ background: 'var(--surface-alt)', padding: '1.25rem', borderRadius: 'var(--radius-md)', marginBottom: '2rem', fontSize: '0.92rem' }}>
               <div>
                 <div style={{ color: 'var(--text-muted)' }}>Destinataire :</div>
                 <div style={{ fontWeight: 700 }}>{orderData.order.customer_name}</div>

@@ -215,7 +215,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
         <div
           style={{
             background: '#fff',
-            padding: '3rem 2.5rem',
+            padding: 'clamp(1.5rem, 5vw, 3rem) clamp(1rem, 4vw, 2.5rem)',
             borderRadius: 'var(--radius-lg)',
             border: '1px solid var(--border)',
             boxShadow: 'var(--shadow-lg)',
@@ -277,7 +277,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
               style={{
                 background: 'linear-gradient(135deg, #0284c7 0%, #00B2FE 100%)',
                 color: '#fff',
-                padding: '2.25rem 2rem',
+                padding: 'clamp(1.5rem, 4vw, 2.25rem) clamp(1rem, 4vw, 2rem)',
                 borderRadius: 'var(--radius-lg)',
                 boxShadow: '0 10px 30px rgba(0, 178, 254, 0.35)',
                 marginBottom: '2.5rem',
@@ -393,7 +393,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
               style={{
                 background: 'linear-gradient(135deg, #ea580c 0%, #ff7900 100%)',
                 color: '#fff',
-                padding: '2.25rem 2rem',
+                padding: 'clamp(1.5rem, 4vw, 2.25rem) clamp(1rem, 4vw, 2rem)',
                 borderRadius: 'var(--radius-lg)',
                 boxShadow: '0 10px 30px rgba(255, 121, 0, 0.35)',
                 marginBottom: '2.5rem',
@@ -573,7 +573,7 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                 Détails de la livraison
               </h3>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', background: 'var(--surface-alt, #f8fafc)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '2rem', fontSize: '0.92rem' }}>
+              <div className="responsive-recap-grid" style={{ background: 'var(--surface-alt, #f8fafc)', padding: '1.25rem', borderRadius: 'var(--radius-md)', marginBottom: '2rem', fontSize: '0.92rem' }}>
                 <div>
                   <div style={{ color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Destinataire :</div>
                   <div style={{ fontWeight: 700 }}>{order.customer_name || 'Client'}</div>

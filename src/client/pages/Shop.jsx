@@ -17,6 +17,7 @@ export default function Shop({ initialSearch = '', initialCategory = '', initial
   const [promoOnly, setPromoOnly] = useState(initialPromo);
   const [sortBy, setSortBy] = useState('newest');
   const [page, setPage] = useState(1);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Charger les catégories au démarrage
   useEffect(() => {
@@ -130,10 +131,26 @@ export default function Shop({ initialSearch = '', initialCategory = '', initial
           </div>
         </div>
 
+        {/* Bouton Filtres sur Mobile / Tablette */}
+        <div className="shop-mobile-filter-bar">
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '1.25rem', padding: '0.75rem 1rem' }}
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+          >
+            <span>⚙️ {showMobileFilters ? 'Masquer les filtres' : 'Afficher les filtres & recherche'}</span>
+            {(selectedCategory !== 'all' || minPrice || maxPrice || inStockOnly || promoOnly || search) && (
+              <span className="badge badge-primary" style={{ fontSize: '0.72rem', padding: '2px 8px' }}>Filtres actifs</span>
+            )}
+          </button>
+        </div>
+
         {/* Disposition principale : Sidebar Filtres + Grille Produits */}
-        <div style={{ display: 'grid', gridTemplateColumns: '270px 1fr', gap: '2rem', alignItems: 'start' }}>
+        <div className="responsive-shop-grid">
           {/* SIDEBAR FILTRES */}
           <aside
+            className={`shop-sidebar ${showMobileFilters ? 'open' : ''}`}
             style={{
               background: 'var(--surface)',
               padding: '1.75rem',
