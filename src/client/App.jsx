@@ -8,7 +8,6 @@ import { CartProvider } from './context/CartContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
-import WhatsAppButton from './components/WhatsAppButton';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Pages publiques
@@ -271,7 +270,6 @@ function AppContent() {
       <main>{pageComponent}</main>
       <Footer onNavigate={navigate} />
       <CartDrawer onNavigate={navigate} />
-      <WhatsAppButton />
     </>
   );
 }
