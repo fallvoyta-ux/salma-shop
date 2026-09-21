@@ -7,18 +7,14 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('salma_token') || localStorage.getItem('teranga_token') || null);
   const [loading, setLoading] = useState(true);
 
-  // Vérifier la session au montage si un jeton existe
+  // Vérifier la session au montage
   useEffect(() => {
     async function checkAuth() {
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
       try {
         const res = await fetch('/api/auth/me', {
+          credentials: 'include',
           headers: {
-            'Authorization': `Bearer ${token}`
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
           }
         });
         const data = await res.json();
@@ -45,6 +41,7 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
@@ -64,6 +61,7 @@ export function AuthProvider({ children }) {
   const register = async (userData) => {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData)
     });
@@ -81,6 +79,9 @@ export function AuthProvider({ children }) {
 
   // Déconnexion
   const logout = () => {
+    try {
+      fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+    } catch (_) {}
     localStorage.removeItem('salma_token');
     localStorage.removeItem('teranga_token');
     setToken(null);

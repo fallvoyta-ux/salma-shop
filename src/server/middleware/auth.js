@@ -2,23 +2,31 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
 import { db } from '../db/connection.js';
 
-export async function authenticate(req, res, next) {
-  let token = null;
-
-  // Récupération depuis le header Authorization: Bearer <token>
+function extractToken(req) {
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.split(' ')[1];
-  } else if (req.headers.cookie) {
-    // Ou depuis un cookie token
-    const cookies = Object.fromEntries(
-      req.headers.cookie.split(';').map(c => {
-        const [k, ...v] = c.trim().split('=');
-        return [k, decodeURIComponent(v.join('='))];
-      })
-    );
-    token = cookies.token;
+    return authHeader.split(' ')[1];
   }
+
+  if (req.headers.cookie) {
+    try {
+      const cookies = Object.fromEntries(
+        req.headers.cookie.split(';').map(c => {
+          const [k, ...v] = c.trim().split('=');
+          return [k, decodeURIComponent(v.join('='))];
+        })
+      );
+      return cookies.salma_token || cookies.token || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+export async function authenticate(req, res, next) {
+  const token = extractToken(req);
 
   if (!token) {
     return res.status(401).json({
@@ -50,11 +58,7 @@ export async function authenticate(req, res, next) {
 
 // Middleware optionnel (permet d'attacher l'utilisateur si connecté sans bloquer si invité)
 export async function optionalAuthenticate(req, res, next) {
-  let token = null;
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.split(' ')[1];
-  }
+  const token = extractToken(req);
 
   if (token) {
     try {

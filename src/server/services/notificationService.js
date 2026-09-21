@@ -21,7 +21,7 @@ export const notificationService = {
 
     if (isMobileMoney) {
       const providerTitle = order.payment_method === 'orange_money' ? 'ORANGE MONEY' : 'WAVE';
-      return `✅ *PAIEMENT ENVOYÉ AVEC SUCCÈS SUR ${providerTitle} (GROUPE SALMA FALL)*\n` +
+      return `✅ *PAIEMENT ENVOYÉ SUR ${providerTitle} (GROUPE SALMA FALL)*\n` +
         `🛍️ *COMMANDE - GLOBAL BUSINESS SERVICES GRP SF*\n` +
         `━━━━━━━━━━━━━━━━━━━\n` +
         `📦 *N° Commande* : ${order.order_number}\n` +
@@ -37,7 +37,7 @@ export const notificationService = {
         `🚚 *Frais de livraison* : ${(order.delivery_fee || 0).toLocaleString('fr-FR')} FCFA\n` +
         `━━━━━━━━━━━━━━━━━━━\n` +
         `Bonjour Groupe SALMA FALL / Salma Shop ! 👋\n` +
-        `J'ai bien validé mon règlement de ${(order.total_amount || 0).toLocaleString('fr-FR')} FCFA sur votre compte ${providerTitle} avec succès. ✅\n` +
+        `J'ai bien validé mon règlement de ${(order.total_amount || 0).toLocaleString('fr-FR')} FCFA sur votre compte ${providerTitle}. ✅\n` +
         `Merci de me confirmer la bonne réception et de préparer ma livraison ! 💜🕊️🌹`;
     }
 
@@ -49,8 +49,8 @@ export const notificationService = {
       `💳 *Mode de Règlement* : ${paymentText}\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `🛒 *Articles demandés* :\n${itemsText}\n\n` +
-      `🚚 *Livraison* : ${(order.delivery_fee).toLocaleString('fr-FR')} FCFA\n` +
-      `💰 *TOTAL À PAYER* : ${(order.total_amount).toLocaleString('fr-FR')} FCFA\n` +
+      `🚚 *Livraison* : ${(order.delivery_fee || 0).toLocaleString('fr-FR')} FCFA\n` +
+      `💰 *TOTAL À PAYER* : ${(order.total_amount || 0).toLocaleString('fr-FR')} FCFA\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `Bonjour Global Business Services Grp SF (Groupe Salma Fall) ! 👋 Je viens de valider cette commande sur votre boutique en ligne. La Qualité fait la Différence ! 💜🕊️🌹`;
   },

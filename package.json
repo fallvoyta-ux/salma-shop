@@ -15,6 +15,7 @@
     "start": "node src/server/index.js",
     "db:seed": "node src/server/db/seed.js",
     "create-admin": "node src/server/scripts/createAdmin.js",
+    "check:prod": "node src/server/scripts/checkProductionReady.js",
     "test": "node src/server/tests/test_api.js"
   },
   "dependencies": {

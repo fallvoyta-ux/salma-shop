@@ -2,15 +2,15 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { config } from '../config.js';
+import { db } from '../db/connection.js';
 
 /**
  * Stockage des images produits.
  *
- * Sur Render (plan gratuit) le disque est ÉPHÉMÈRE : tout fichier écrit dans
- * /uploads disparaît au prochain déploiement ou redémarrage. Si la variable
- * CLOUDINARY_URL est définie, les images sont donc envoyées sur Cloudinary
- * (gratuit, permanent, redimensionnement et WebP automatiques).
- * Sinon, on retombe sur le disque local, ce qui reste parfait en développement.
+ * 1. Si CLOUDINARY_URL est défini : téléversement direct sur Cloudinary (permanent, WebP auto).
+ * 2. Si CLOUDINARY_URL est absent : stockage local avec réplication automatique dans la
+ *    table SQL `uploaded_files` (BYTEA / BLOB). Ainsi, même sur le disque éphémère de Render,
+ *    aucune image n'est perdue : le serveur la restaure automatiquement depuis la DB au redémarrage !
  */
 
 const cloudinaryUrl = (process.env.CLOUDINARY_URL || '').trim();
@@ -39,9 +39,7 @@ if (cloudinaryUrl) {
     console.log('🖼️  Stockage des images : Cloudinary (permanent)');
   } catch (err) {
     console.warn(
-      '⚠️ CLOUDINARY_URL est définie mais les paquets sont absents.\n' +
-      '   Lancez : npm install cloudinary multer-storage-cloudinary\n' +
-      '   Repli temporaire sur le disque local (images perdues au redéploiement).'
+      '⚠️ Erreur initialisation Cloudinary, bascule sur la persistance en base de données locale/PostgreSQL.'
     );
   }
 }
@@ -51,13 +49,7 @@ if (!storage) {
     fs.mkdirSync(config.uploadsDir, { recursive: true });
   }
 
-  if (config.env === 'production') {
-    console.warn(
-      '⚠️ Images stockées sur le disque local en production.\n' +
-      '   Sur Render, elles seront PERDUES à chaque déploiement.\n' +
-      '   Définissez CLOUDINARY_URL pour un stockage permanent.'
-    );
-  }
+  console.log('📦 Stockage des images : Persistance en base de données (table uploaded_files) + cache disque.');
 
   storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -73,9 +65,31 @@ if (!storage) {
 }
 
 /**
+ * Persiste automatiquement les fichiers téléversés dans la table `uploaded_files`
+ * si Cloudinary n'est pas configuré.
+ */
+export async function persistUploadedFiles(files) {
+  if (usingCloudinary || !files) return;
+  const list = Array.isArray(files) ? files : [files];
+  for (const f of list) {
+    if (!f || !f.path || !fs.existsSync(f.path)) continue;
+    try {
+      const buffer = fs.readFileSync(f.path);
+      await db.execute(`
+        INSERT INTO uploaded_files (filename, mime_type, data, size_bytes)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(filename) DO UPDATE SET data = excluded.data, size_bytes = excluded.size_bytes
+      `, [f.filename, f.mimetype, buffer, f.size]);
+    } catch (err) {
+      console.warn(`Note persistance image ${f.filename} en base:`, err.message);
+    }
+  }
+}
+
+/**
  * Renvoie l'URL à enregistrer en base pour un fichier téléversé.
- * Cloudinary place l'URL complète dans file.path ; le disque local
- * n'a qu'un nom de fichier servi depuis /uploads.
+ * Cloudinary place l'URL complète dans file.path ; le stockage local
+ * sert depuis /uploads.
  */
 export function fileUrl(file) {
   if (!file) return null;

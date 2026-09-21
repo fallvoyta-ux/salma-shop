@@ -32,15 +32,18 @@ export default function Login({ onNavigate }) {
   };
 
   return (
-    <div className="section">
-      <div className="container" style={{ maxWidth: '480px' }}>
+    <div className="section" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+      <div className="container" style={{ maxWidth: '480px', margin: '0 auto', padding: '0 1rem', width: '100%', boxSizing: 'border-box' }}>
         <div
+          className="auth-card"
           style={{
             background: '#fff',
-            padding: '2.5rem',
             borderRadius: 'var(--radius-lg)',
             border: '1px solid var(--border)',
-            boxShadow: 'var(--shadow-md)'
+            boxShadow: 'var(--shadow-md)',
+            margin: '0 auto',
+            width: '100%',
+            boxSizing: 'border-box'
           }}
         >
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>

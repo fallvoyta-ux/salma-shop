@@ -2,7 +2,7 @@ import express from 'express';
 import { db } from '../db/connection.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/adminAuth.js';
-import { upload, fileUrl } from '../middleware/upload.js';
+import { upload, fileUrl, persistUploadedFiles } from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -195,6 +195,7 @@ router.post('/products', upload.array('images', 6), async (req, res, next) => {
         `, [productId, imageUrl, imageIndex === 0 ? 1 : 0, imageIndex]);
         imageIndex++;
       }
+      await persistUploadedFiles(req.files);
     }
 
     // Traitement des URLs d'images si fournies
@@ -349,6 +350,7 @@ router.post('/products/:id/images', upload.array('images', 6), async (req, res, 
       `, [productId, url, orderIndex === 0 ? 1 : 0, orderIndex]);
       orderIndex++;
     }
+    await persistUploadedFiles(files);
 
     const images = await db.queryAll('SELECT * FROM product_images WHERE product_id = ? ORDER BY is_primary DESC, display_order ASC', [productId]);
     res.json({ success: true, message: 'Images ajoutées.', images });
@@ -469,6 +471,7 @@ router.patch('/orders/:id/status', async (req, res, next) => {
     }
 
     let stockWarning = null;
+    let newPaymentStatus = order.payment_status;
 
     await db.transaction(async (tx) => {
       const wasCancelled = order.order_status === 'cancelled';
@@ -482,10 +485,18 @@ router.patch('/orders/:id/status', async (req, res, next) => {
             await tx.execute('UPDATE products SET stock = stock + ? WHERE id = ?', [it.quantity, it.product_id]);
           }
         }
+
+        // Si la commande était déjà payée, basculer vers 'refund_pending' pour exiger le remboursement
+        if (order.payment_status === 'paid') {
+          newPaymentStatus = 'refund_pending';
+          await tx.execute("UPDATE orders SET payment_status = 'refund_pending', updated_at = CURRENT_TIMESTAMP WHERE id = ?", [orderId]);
+          await tx.execute("UPDATE payments SET status = 'refund_pending' WHERE order_id = ? AND status IN ('paid', 'successful')", [orderId]);
+          stockWarning = "⚠️ Attention : Cette commande avait déjà été payée. Le statut de paiement a été passé à 'refund_pending' (remboursement client à effectuer).";
+        }
       }
 
       // Réactivation : la commande était annulée (stock réapprovisionné) et repart vers un autre statut
-      // → il faut re-décrémenter le stock, sinon les articles apparaissent disponibles deux fois.
+      // → il faut re-décrémenter le stock. Si stock insuffisant, INTERROMPRE la transaction (409 Conflict)
       if (wasCancelled && !willBeCancelled) {
         const items = await tx.queryAll('SELECT product_id, product_name, quantity FROM order_items WHERE order_id = ?', [orderId]);
         for (const it of items) {
@@ -495,9 +506,11 @@ router.patch('/orders/:id/status', async (req, res, next) => {
             [it.quantity, it.product_id, it.quantity]
           );
           if (res.changes === 0) {
-            // Stock insuffisant pour réactiver entièrement la commande : on continue quand même
-            // (l'admin a demandé ce changement de statut) mais on le signale clairement.
-            stockWarning = `Attention : stock insuffisant pour "${it.product_name}" — le réapprovisionnement au moment de l'annulation a été repris entre-temps.`;
+            const err = new Error(
+              `Stock insuffisant pour réactiver la commande : l'article "${it.product_name}" n'a plus assez de pièces disponibles.`
+            );
+            err.status = 409;
+            throw err;
           }
         }
       }
@@ -508,7 +521,8 @@ router.patch('/orders/:id/status', async (req, res, next) => {
     res.json({
       success: true,
       message: `Statut de la commande mis à jour: ${status}`,
-      warning: stockWarning
+      warning: stockWarning,
+      payment_status: newPaymentStatus
     });
   } catch (err) {
     next(err);
@@ -521,7 +535,7 @@ router.patch('/orders/:id/payment-status', async (req, res, next) => {
     const { payment_status } = req.body;
     const orderId = req.params.id;
 
-    const validStatuses = ['pending', 'paid', 'failed', 'refunded'];
+    const validStatuses = ['pending', 'paid', 'failed', 'refund_pending', 'refunded'];
     if (!validStatuses.includes(payment_status)) {
       return res.status(400).json({ success: false, message: 'Statut de paiement non valide.' });
     }
@@ -569,6 +583,9 @@ router.post('/categories', upload.single('image'), async (req, res, next) => {
     }
 
     const finalImage = req.file ? fileUrl(req.file) : (image_url || null);
+    if (req.file) {
+      await persistUploadedFiles(req.file);
+    }
 
     const result = await db.execute(`
       INSERT INTO categories (name, slug, description, image_url, display_order, is_active)
@@ -588,6 +605,9 @@ router.put('/categories/:id', upload.single('image'), async (req, res, next) => 
     const catId = req.params.id;
 
     const finalImage = req.file ? fileUrl(req.file) : (image_url !== undefined ? image_url : undefined);
+    if (req.file) {
+      await persistUploadedFiles(req.file);
+    }
 
     await db.execute(`
       UPDATE categories

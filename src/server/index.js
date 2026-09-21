@@ -4,7 +4,6 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import rateLimit from 'express-rate-limit';
 
 import { config, validateConfig } from './config.js';
 import { db, initSchema } from './db/connection.js';
@@ -12,6 +11,7 @@ import { seedDatabase } from './db/seed.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authenticate } from './middleware/auth.js';
 import { requireAdmin } from './middleware/adminAuth.js';
+import { authLimiter, paymentLimiter, publicWriteLimiter } from './middleware/rateLimiters.js';
 
 // Import des routes
 import authRoutes from './routes/authRoutes.js';
@@ -89,6 +89,32 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 if (!fs.existsSync(config.uploadsDir)) {
   fs.mkdirSync(config.uploadsDir, { recursive: true });
 }
+
+// Servir les fichiers téléversés avec restauration automatique depuis la DB si le conteneur a redémarré
+app.get('/uploads/:filename', async (req, res, next) => {
+  const safeFilename = path.basename(req.params.filename);
+  const filePath = path.join(config.uploadsDir, safeFilename);
+
+  if (fs.existsSync(filePath)) {
+    return res.sendFile(filePath);
+  }
+
+  try {
+    const fileRow = await db.queryOne('SELECT mime_type, data FROM uploaded_files WHERE filename = ?', [safeFilename]);
+    if (fileRow && fileRow.data) {
+      try {
+        fs.writeFileSync(filePath, Buffer.from(fileRow.data));
+      } catch (writeErr) {}
+      res.setHeader('Content-Type', fileRow.mime_type || 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      return res.send(Buffer.from(fileRow.data));
+    }
+  } catch (dbErr) {
+    console.warn('Note restauration média DB:', dbErr.message);
+  }
+
+  next();
+});
 app.use('/uploads', express.static(config.uploadsDir));
 
 // Servir les fichiers statiques du dossier public (logos, icônes SVG)
@@ -97,58 +123,12 @@ if (fs.existsSync(publicDir)) {
   app.use(express.static(publicDir));
 }
 
-// 1. Limitation anti force-brute sur l'authentification
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 30,
-  message: {
-    success: false,
-    message: 'Trop de tentatives de connexion. Veuillez patienter 15 minutes.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
-// 2. Limitation anti-inondation sur la création de commandes
-const orderLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 40,
-  message: {
-    success: false,
-    message: 'Trop de commandes passées récemment. Veuillez patienter quelques minutes.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
-// 3. Limitation sur les endpoints de paiement
-const paymentLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 60,
-  message: {
-    success: false,
-    message: 'Trop de requêtes de paiement. Veuillez patienter.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false
-});
-// 4. Limitation anti-spam sur les avis et messages de contact
-const publicWriteLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 10,
-  message: {
-    success: false,
-    message: 'Trop d’envois depuis votre appareil. Veuillez réessayer dans une heure.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
-// Enregistrement des routes API
+// Enregistrement des routes API avec limiteurs de débit modulaires
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
-app.use('/api/orders', orderLimiter, orderRoutes);
+// /api/orders utilise orderCreationLimiter (40/15min) sur POST / et trackingLimiter (10/15min) sur GET /track/:orderNumber
+app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentLimiter, paymentRoutes);
 app.use('/api/reviews', publicWriteLimiter, reviewRoutes);
 app.use('/api/delivery-zones', deliveryRoutes);
@@ -197,7 +177,7 @@ async function startServer() {
     console.error('Erreur lors de l\'initialisation de la DB:', err);
   }
 
-  app.listen(config.port, '0.0.0.0', () => {
+  return app.listen(config.port, '0.0.0.0', () => {
     console.log(`\n======================================================`);
     console.log(`🚀 GLOBAL BUSINESS SERVICES GRP SF - GROUPE SALMA FALL`);
     console.log(`🌐 URL : http://localhost:${config.port}`);
@@ -206,6 +186,10 @@ async function startServer() {
   });
 }
 
-startServer();
+const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename);
+if (isDirectRun) {
+  startServer();
+}
 
+export { app, startServer };
 export default app;

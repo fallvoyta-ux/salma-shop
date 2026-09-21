@@ -18,13 +18,15 @@ const IS_LIVE = config.paymentMode === 'live';
 
 const router = express.Router();
 
+import { optionalAuthenticate } from '../middleware/auth.js';
+
 /**
  * POST /api/payments/verify
- * Vérifie et confirme un paiement.
- * En mode LIVE : Ne fait JAMAIS confiance au statut envoyé par le client ;
- * interroge directement le prestataire ou exige une preuve cryptographique.
+ * Vérifie et confirme un paiement avec contrôle strict de propriété.
+ * - Le demandeur doit prouver qu'il est propriétaire de la commande (utilisateur connecté, admin ou code secret de suivi)
+ * - En mode LIVE : Le client ne décide JAMAIS du succès ; validation par API Wave officielle ou webhook sécurisé.
  */
-router.post('/verify', async (req, res, next) => {
+router.post('/verify', optionalAuthenticate, async (req, res, next) => {
   try {
     const { transaction_id, status = 'successful' } = req.body;
 
@@ -44,6 +46,34 @@ router.post('/verify', async (req, res, next) => {
       });
     }
 
+    // Récupérer la commande associée
+    const order = await db.queryOne('SELECT * FROM orders WHERE id = ?', [payment.order_id]);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Commande associée à cette transaction introuvable.'
+      });
+    }
+
+    // Contrôle d'autorisation strict :
+    // La transaction doit appartenir au client demandeur (connecté, admin ou invité avec code secret)
+    const isOwner = req.user && order.user_id && Number(order.user_id) === Number(req.user.id);
+    const isAdmin = req.user && req.user.role === 'admin';
+    const providedCode = req.headers['x-tracking-code'] || req.body.tracking_code;
+    let isVerifiedGuest = false;
+
+    if (providedCode && order.tracking_code_hash) {
+      const codeHash = crypto.createHash('sha256').update(String(providedCode).trim()).digest('hex');
+      isVerifiedGuest = safeCompare(codeHash, order.tracking_code_hash);
+    }
+
+    if (!isAdmin && !isOwner && !isVerifiedGuest) {
+      return res.status(403).json({
+        success: false,
+        message: 'Accès refusé : cette transaction n’appartient pas à votre session de commande.'
+      });
+    }
+
     // Idempotence : si déjà payée, retourner le succès sans ré-exécuter
     if (payment.status === 'paid' || payment.status === 'successful') {
       return res.json({
@@ -58,6 +88,7 @@ router.post('/verify', async (req, res, next) => {
     }
 
     const isLive = config.paymentMode === 'live';
+    let serverEnforcedStatus = 'successful';
 
     if (isLive) {
       // 1. Paiement à la livraison : impossible à marquer "payé" par le client via l'API publique
@@ -78,30 +109,57 @@ router.post('/verify', async (req, res, next) => {
               message: 'La transaction n’est pas encore validée par Wave.'
             });
           }
+
+          // Vérification stricte du montant certifié par Wave si fourni
+          if (waveCheck.amount && Math.round(Number(waveCheck.amount)) !== Math.round(Number(payment.amount))) {
+            return res.status(400).json({
+              success: false,
+              message: `Incohérence de montant Wave : payé (${waveCheck.amount}) != attendu (${payment.amount}).`
+            });
+          }
+
+          // Le serveur impose STRICTEMENT son propre statut certifié par Wave (ignorant le statut soumis par le navigateur)
+          serverEnforcedStatus = 'successful';
         } catch (waveErr) {
           return res.status(400).json({
             success: false,
             message: `Échec de vérification Wave : ${waveErr.message}`
           });
         }
+      } else if (payment.provider === 'paytech') {
+        return res.status(400).json({
+          success: false,
+          message: 'La confirmation PayTech est exclusivement traitée via le webhook signé officiel.'
+        });
+      } else if (payment.provider === 'orange_money') {
+        return res.status(400).json({
+          success: false,
+          message: 'La confirmation Orange Money est traitée via notification officielle ou validation par le gérant.'
+        });
       } else {
-        // En mode Live pour les autres passerelles, confirmation réservée au webhook sécurisé
         return res.status(400).json({
           success: false,
           message: 'Validation en attente du webhook sécurisé du prestataire.'
         });
       }
     } else {
-      // Mode Test : validation permise mais contrôlée
-      if (!['successful', 'failed', 'cancelled'].includes(status)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Statut de paiement de test invalide.'
-        });
+      // Mode Test : le serveur impose le statut 'successful' pour Wave sans se fier au navigateur
+      if (payment.provider === 'wave') {
+        serverEnforcedStatus = 'successful';
+      } else {
+        const candidateStatus = req.body && req.body.status;
+        if (candidateStatus && !['successful', 'failed', 'cancelled'].includes(candidateStatus)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Statut de paiement de test invalide.'
+          });
+        }
+        serverEnforcedStatus = candidateStatus || 'successful';
       }
     }
 
-    const result = await paymentService.verifyAndConfirmPayment(transaction_id, status, req.body);
+    // Confirmation avec le statut imposé par le serveur
+    const result = await paymentService.verifyAndConfirmPayment(transaction_id, serverEnforcedStatus, req.body);
     res.json({
       success: true,
       message: 'Paiement vérifié avec succès.',

@@ -13,9 +13,20 @@ const STATUS_STEPS = [
 export default function OrderTracking({ onNavigate }) {
   const { formatPrice } = useSettings();
   const [orderNumberInput, setOrderNumberInput] = useState('');
+  const [trackingCodeInput, setTrackingCodeInput] = useState('');
   const [orderData, setOrderData] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Préremplir le code secret depuis le sessionStorage si disponible pour ce numéro
+  const handleOrderNumberChange = (val) => {
+    setOrderNumberInput(val);
+    const clean = val.trim().toUpperCase();
+    if (clean && typeof sessionStorage !== 'undefined') {
+      const saved = sessionStorage.getItem(`salma_tracking_${clean}`);
+      if (saved) setTrackingCodeInput(saved);
+    }
+  };
 
   const handleTrack = async (e) => {
     e.preventDefault();
@@ -26,7 +37,10 @@ export default function OrderTracking({ onNavigate }) {
     setOrderData(null);
 
     try {
-      const res = await fetch(`/api/orders/track/${encodeURIComponent(orderNumberInput.trim().toUpperCase())}`);
+      const headers = trackingCodeInput.trim() ? { 'x-tracking-code': trackingCodeInput.trim() } : {};
+      const res = await fetch(`/api/orders/track/${encodeURIComponent(orderNumberInput.trim().toUpperCase())}`, {
+        headers
+      });
       const data = await res.json();
 
       if (data.success && data.order) {
@@ -54,7 +68,7 @@ export default function OrderTracking({ onNavigate }) {
           <span className="section-tag">Suivi en Temps Réel</span>
           <h1 className="section-title">Suivi de votre Commande</h1>
           <p className="section-desc">
-            Saisissez le numéro unique de votre commande (ex: <code>CMD-2026-000101</code>) pour suivre son statut d'acheminement en direct.
+            Saisissez le numéro de votre commande (ex: <code>CMD-2026-000101</code>) et votre code secret de suivi pour suivre son statut en toute confidentialité.
           </p>
         </div>
 
@@ -69,19 +83,32 @@ export default function OrderTracking({ onNavigate }) {
             marginBottom: '2.5rem'
           }}
         >
-          <form onSubmit={handleTrack} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <input
-              type="text"
-              className="form-input"
-              style={{ flex: '1 1 220px', minWidth: '0' }}
-              placeholder="Ex: CMD-2026-000101"
-              value={orderNumberInput}
-              onChange={(e) => setOrderNumberInput(e.target.value)}
-              required
-            />
-            <button type="submit" className="btn btn-primary" style={{ flex: '0 0 auto' }} disabled={loading}>
-              {loading ? 'Recherche...' : 'Suivre ma commande →'}
-            </button>
+          <form onSubmit={handleTrack} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                className="form-input"
+                style={{ flex: '2 1 200px', minWidth: '0' }}
+                placeholder="N° de commande (ex: CMD-2026-000101) *"
+                value={orderNumberInput}
+                onChange={(e) => handleOrderNumberChange(e.target.value)}
+                required
+              />
+              <input
+                type="text"
+                className="form-input"
+                style={{ flex: '1 1 140px', minWidth: '0' }}
+                placeholder="Code secret (ex: 583921)"
+                value={trackingCodeInput}
+                onChange={(e) => setTrackingCodeInput(e.target.value)}
+              />
+              <button type="submit" className="btn btn-primary" style={{ flex: '0 0 auto' }} disabled={loading}>
+                {loading ? 'Recherche...' : 'Suivre ma commande →'}
+              </button>
+            </div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              🔒 <em>Le code secret protège votre vie privée et vous donne accès à votre adresse de livraison complète.</em>
+            </div>
           </form>
 
           {errorMsg && (
@@ -177,12 +204,19 @@ export default function OrderTracking({ onNavigate }) {
               <div>
                 <div style={{ color: 'var(--text-muted)' }}>Destinataire :</div>
                 <div style={{ fontWeight: 700 }}>{orderData.order.customer_name}</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{orderData.order.customer_phone}</div>
               </div>
 
               <div>
                 <div style={{ color: 'var(--text-muted)' }}>Destination :</div>
                 <div style={{ fontWeight: 700 }}>{orderData.order.delivery_city}</div>
-                <div>{orderData.order.delivery_address}</div>
+                {orderData.order.delivery_address ? (
+                  <div style={{ color: 'var(--dark)' }}>{orderData.order.delivery_address}</div>
+                ) : (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                    🔒 Adresse protégée (renseignez votre code secret ci-dessus)
+                  </div>
+                )}
               </div>
 
               <div>
@@ -192,20 +226,41 @@ export default function OrderTracking({ onNavigate }) {
 
               <div>
                 <div style={{ color: 'var(--text-muted)' }}>Montant Total :</div>
-                <div style={{ fontWeight: 800, color: 'var(--dark)' }}>{formatPrice(orderData.order.total_amount)}</div>
+                <div style={{ fontWeight: 800, color: 'var(--dark)' }}>
+                  {orderData.order.total_amount ? formatPrice(orderData.order.total_amount) : 'Protégé 🔒'}
+                </div>
               </div>
             </div>
 
             {/* Articles */}
-            <h4 style={{ fontSize: '1.05rem', marginBottom: '1rem', color: 'var(--dark)' }}>Articles</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-              {orderData.items.map((it) => (
-                <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 1rem', background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '0.9rem' }}>
-                  <span><strong>{it.quantity}x</strong> {it.product_name}</span>
-                  <span style={{ fontWeight: 700 }}>{formatPrice(it.subtotal)}</span>
-                </div>
-              ))}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h4 style={{ fontSize: '1.05rem', margin: 0, color: 'var(--dark)' }}>
+                Articles commandés ({orderData.total_items_count || orderData.items.reduce((sum, it) => sum + (it.quantity || 1), 0)})
+              </h4>
+              {!orderData.order.is_verified && (
+                <span style={{ fontSize: '0.78rem', color: 'var(--primary)', fontWeight: 600, background: 'var(--primary-light)', padding: '0.2rem 0.6rem', borderRadius: '50px' }}>
+                  🔒 Contenu protégé
+                </span>
+              )}
             </div>
+
+            {orderData.order.is_verified ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                {orderData.items.map((it) => (
+                  <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '0.9rem' }}>
+                    <span><strong>{it.quantity}x</strong> {it.product_name}</span>
+                    <span style={{ fontWeight: 700 }}>{formatPrice(it.subtotal)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: 'var(--radius-md)', padding: '1.25rem', textAlign: 'center' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', margin: 0, lineHeight: 1.5 }}>
+                  🔒 <strong>Détail des articles protégé</strong> : Pour préserver votre vie privée, les noms, photos et prix précis des articles ne sont pas affichés publiquement.<br />
+                  Saisissez votre <strong>code secret de suivi</strong> ci-dessus pour déverrouiller le contenu complet de votre commande.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

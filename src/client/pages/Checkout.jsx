@@ -187,6 +187,12 @@ export default function Checkout({ onNavigate }) {
       if (data.success && data.order) {
         clearCart();
 
+        if (data.tracking_code) {
+          try {
+            sessionStorage.setItem(`salma_tracking_${data.order.order_number}`, data.tracking_code);
+          } catch (e) {}
+        }
+
         if (paymentMethod === 'wave') {
           showToast('✓ Commande enregistrée ! Finalisation du règlement Wave...', 'success');
           onNavigate(`/order-confirmation/${data.order.order_number}?auto_wave=1`);

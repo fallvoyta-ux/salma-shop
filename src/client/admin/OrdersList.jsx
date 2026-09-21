@@ -77,20 +77,28 @@ export default function OrdersList({ onNavigate }) {
         body: JSON.stringify({ status: newStatus })
       });
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         showToast(data.message, 'success');
         if (data.warning) {
-          // Le stock n'a pas pu être entièrement repris (produit racheté entre-temps) :
-          // l'admin doit le voir, même si le changement de statut a bien été appliqué.
           showToast(data.warning, 'warning');
         }
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, order_status: newStatus } : o));
+        setOrders(prev => prev.map(o => o.id === orderId ? {
+          ...o,
+          order_status: newStatus,
+          payment_status: data.payment_status || o.payment_status
+        } : o));
         if (selectedOrder && selectedOrder.id === orderId) {
-          setSelectedOrder(prev => ({ ...prev, order_status: newStatus }));
+          setSelectedOrder(prev => ({
+            ...prev,
+            order_status: newStatus,
+            payment_status: data.payment_status || prev.payment_status
+          }));
         }
+      } else {
+        showToast(data.message || 'Erreur mise à jour statut.', 'error');
       }
     } catch (err) {
-      showToast('Erreur mise à jour statut.', 'error');
+      showToast(err.message || 'Erreur mise à jour statut.', 'error');
     }
   };
 
@@ -105,15 +113,17 @@ export default function OrdersList({ onNavigate }) {
         body: JSON.stringify({ payment_status: newPaymentStatus })
       });
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         showToast(data.message, 'success');
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, payment_status: newPaymentStatus } : o));
         if (selectedOrder && selectedOrder.id === orderId) {
           setSelectedOrder(prev => ({ ...prev, payment_status: newPaymentStatus }));
         }
+      } else {
+        showToast(data.message || 'Erreur mise à jour paiement.', 'error');
       }
     } catch (err) {
-      showToast('Erreur mise à jour paiement.', 'error');
+      showToast(err.message || 'Erreur mise à jour paiement.', 'error');
     }
   };
 
@@ -139,7 +149,8 @@ export default function OrdersList({ onNavigate }) {
           display: 'flex',
           gap: '1rem',
           flexWrap: 'wrap',
-          alignItems: 'center'
+          alignItems: 'center',
+          boxShadow: 'var(--shadow-sm)'
         }}
       >
         <div style={{ flex: 1, minWidth: '220px' }}>
@@ -182,6 +193,8 @@ export default function OrdersList({ onNavigate }) {
             <option value="all">Tous les statuts paiement</option>
             <option value="paid">Payé</option>
             <option value="pending">Paiement en attente</option>
+            <option value="refund_pending">⚠️ Remboursement à effectuer</option>
+            <option value="refunded">Remboursé</option>
             <option value="failed">Échoué</option>
           </select>
         </div>
@@ -199,23 +212,33 @@ export default function OrdersList({ onNavigate }) {
               <th style={{ padding: '1rem 1.25rem' }}>Commande</th>
               <th style={{ padding: '1rem' }}>Client & Contact</th>
               <th style={{ padding: '1rem' }}>Date</th>
-              <th style={{ padding: '1rem' }}>Montant</th>
+              <th style={{ padding: '1rem' }}>Total</th>
               <th style={{ padding: '1rem' }}>Paiement</th>
               <th style={{ padding: '1rem' }}>Statut Commande</th>
-              <th style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>Actions</th>
+              <th style={{ padding: '1rem', textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '3rem' }}>Chargement des commandes...</td></tr>
+              <tr>
+                <td colSpan="7" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  Chargement des commandes...
+                </td>
+              </tr>
             ) : orders.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Aucune commande ne correspond aux filtres.</td></tr>
+              <tr>
+                <td colSpan="7" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  Aucune commande trouvée.
+                </td>
+              </tr>
             ) : (
               orders.map((o) => (
-                <tr key={o.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                <tr key={o.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}>
                   <td style={{ padding: '1rem 1.25rem' }}>
-                    <div style={{ fontWeight: 800, color: 'var(--dark)' }}>{o.order_number}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{o.items_count || 1} article(s)</div>
+                    <div style={{ fontWeight: 800, color: 'var(--primary)', fontFamily: 'var(--font-heading)' }}>
+                      {o.order_number}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID #{o.id}</div>
                   </td>
 
                   <td style={{ padding: '1rem' }}>
@@ -242,14 +265,27 @@ export default function OrdersList({ onNavigate }) {
                         fontSize: '0.75rem',
                         fontWeight: 700,
                         border: '1px solid var(--border)',
-                        background: o.payment_status === 'paid' ? 'var(--success-bg)' : '#fef3c7',
-                        color: o.payment_status === 'paid' ? 'var(--success)' : '#92400e'
+                        background: o.payment_status === 'paid' 
+                          ? 'var(--success-bg)' 
+                          : o.payment_status === 'refund_pending'
+                          ? '#fee2e2'
+                          : o.payment_status === 'refunded'
+                          ? '#f3e8ff'
+                          : '#fef3c7',
+                        color: o.payment_status === 'paid' 
+                          ? 'var(--success)' 
+                          : o.payment_status === 'refund_pending'
+                          ? '#b91c1c'
+                          : o.payment_status === 'refunded'
+                          ? '#7e22ce'
+                          : '#92400e'
                       }}
                     >
                       <option value="pending">Paiement en attente</option>
                       <option value="paid">Payé ✓</option>
-                      <option value="failed">Échoué</option>
+                      <option value="refund_pending">⚠️ Remboursement à effectuer</option>
                       <option value="refunded">Remboursé</option>
+                      <option value="failed">Échoué</option>
                     </select>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '2px' }}>
                       via {o.payment_method}
@@ -311,6 +347,23 @@ export default function OrdersList({ onNavigate }) {
                 <div>Chargement des détails...</div>
               ) : (
                 <div>
+                  {/* Alerte Remboursement Requis */}
+                  {selectedOrder.payment_status === 'refund_pending' && (
+                    <div style={{ background: '#fee2e2', border: '1px solid #f87171', color: '#b91c1c', padding: '1rem 1.25rem', borderRadius: 'var(--radius-md)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                      <div>
+                        <strong>⚠️ Remboursement client à effectuer</strong>
+                        <div style={{ fontSize: '0.85rem' }}>Cette commande a été annulée après encaissement d'un montant de <strong>{formatPrice(selectedOrder.total_amount)}</strong>.</div>
+                      </div>
+                      <button
+                        className="btn btn-sm"
+                        style={{ background: '#b91c1c', color: '#fff', border: 'none', cursor: 'pointer' }}
+                        onClick={() => handleUpdatePaymentStatus(selectedOrder.id, 'refunded')}
+                      >
+                        Marquer comme Remboursé ✓
+                      </button>
+                    </div>
+                  )}
+
                   {/* Adresse & Client */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'var(--surface-alt)', padding: '1.25rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
                     <div>

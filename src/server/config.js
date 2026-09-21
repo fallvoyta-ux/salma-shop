@@ -12,7 +12,7 @@ export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '5000', 10),
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
-  jwtSecret: process.env.JWT_SECRET || 'salma_shop_chic_ladies_dakar_secret_jwt_2026',
+  jwtSecret: process.env.JWT_SECRET || '',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   dbFilePath: path.resolve(rootDir, process.env.DB_FILE_PATH || 'database.sqlite'),
   uploadsDir: path.resolve(rootDir, 'uploads'),
@@ -29,7 +29,7 @@ export const config = {
   defaultCurrency: process.env.DEFAULT_CURRENCY || 'FCFA',
 
   // Paramètres Paiement Sénégal
-  paymentMode: process.env.PAYMENT_MODE || 'test', // 'test' ou 'live'
+  paymentMode: process.env.PAYMENT_MODE || (process.env.NODE_ENV === 'production' ? '' : 'test'), // 'test' ou 'live'
   wave: {
     apiKey: process.env.WAVE_API_KEY || '',
     businessId: process.env.WAVE_BUSINESS_ID || 'M_5iS6VUrJnTx-',
@@ -52,17 +52,29 @@ export const config = {
 
 export function validateConfig() {
   const isProd = config.env === 'production';
-  if (!isProd) return;
-
   const fatal = [];
 
+  // Exigence absolue de clé secrète JWT : pas de fallback en dur
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
-    fatal.push('JWT_SECRET manquant ou trop court (32 caractères minimum requis).');
+    if (isProd) {
+      fatal.push('JWT_SECRET manquant ou trop court (minimum 32 caractères requis en production).');
+    } else {
+      console.warn('⚠️ ATTENTION : JWT_SECRET absent ou inférieur à 32 caractères. Veuillez configurer JWT_SECRET dans .env.');
+    }
   }
 
-  if (config.paymentMode === 'live') {
-    if (!process.env.WAVE_WEBHOOK_SECRET) {
-      fatal.push('PAYMENT_MODE=live mais WAVE_WEBHOOK_SECRET est absent.');
+  // Exigence absolue de PAYMENT_MODE explicite en production (refus du fallback silencieux 'test')
+  if (isProd) {
+    if (!process.env.PAYMENT_MODE) {
+      fatal.push('PAYMENT_MODE absent en production. Le démarrage est refusé : définissez explicitement PAYMENT_MODE=live ou PAYMENT_MODE=test.');
+    } else if (!['live', 'test'].includes(process.env.PAYMENT_MODE)) {
+      fatal.push(`PAYMENT_MODE='${process.env.PAYMENT_MODE}' non reconnu en production. Valeurs autorisées : 'live' ou 'test'.`);
+    }
+
+    if (config.paymentMode === 'live') {
+      if (!process.env.WAVE_WEBHOOK_SECRET) {
+        fatal.push('PAYMENT_MODE=live mais WAVE_WEBHOOK_SECRET est absent.');
+      }
     }
   }
 
@@ -72,7 +84,7 @@ export function validateConfig() {
     process.exit(1);
   }
 
-  if (!process.env.DATABASE_URL) {
+  if (isProd && !process.env.DATABASE_URL) {
     console.warn('⚠️ Aucune DATABASE_URL : SQLite local utilisé, les données seront perdues au redémarrage.');
   }
 }

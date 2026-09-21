@@ -44,15 +44,18 @@ export default function Register({ onNavigate }) {
   };
 
   return (
-    <div className="section">
-      <div className="container" style={{ maxWidth: '520px' }}>
+    <div className="section" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+      <div className="container" style={{ maxWidth: '520px', margin: '0 auto', padding: '0 1rem', width: '100%', boxSizing: 'border-box' }}>
         <div
+          className="auth-card"
           style={{
             background: '#fff',
-            padding: '2.5rem',
             borderRadius: 'var(--radius-lg)',
             border: '1px solid var(--border)',
-            boxShadow: 'var(--shadow-md)'
+            boxShadow: 'var(--shadow-md)',
+            margin: '0 auto',
+            width: '100%',
+            boxSizing: 'border-box'
           }}
         >
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
@@ -70,7 +73,7 @@ export default function Register({ onNavigate }) {
           )}
 
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="auth-grid-2">
               <div className="form-group">
                 <label className="form-label">Prénom *</label>
                 <input

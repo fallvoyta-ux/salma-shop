@@ -115,17 +115,126 @@ export async function initSchema() {
         await pgPool.query(schemaSql);
         console.log('✅ Schéma PostgreSQL initialisé avec succès !');
       }
+
+      // Migrations PostgreSQL non-destructives
+      try {
+        await pgPool.query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_code_hash VARCHAR(64);');
+      } catch (e) {
+        // Ignorer si la colonne existe déjà
+      }
+
+      try {
+        await pgPool.query(`
+          CREATE TABLE IF NOT EXISTS uploaded_files (
+            id SERIAL PRIMARY KEY,
+            filename VARCHAR(255) NOT NULL UNIQUE,
+            mime_type VARCHAR(100) NOT NULL,
+            data BYTEA NOT NULL,
+            size_bytes INTEGER NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+      } catch (e) {}
     } else {
       const schemaPath = path.join(__dirname, 'schema.sql');
       const schemaSql = fs.readFileSync(schemaPath, 'utf8');
       sqliteDb.exec(schemaSql);
 
-      // Migration non-destructive : vérifier si la table payments supporte le statut 'paid'
+      // Création table uploaded_files (fallback persistance sans Cloudinary)
+      try {
+        sqliteDb.exec(`
+          CREATE TABLE IF NOT EXISTS uploaded_files (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            filename TEXT NOT NULL UNIQUE,
+            mime_type TEXT NOT NULL,
+            data BLOB NOT NULL,
+            size_bytes INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+      } catch (e) {}
+
+      // 1. Migration non-destructive : ajout de la colonne tracking_code_hash si absente
+      try {
+        const orderCols = sqliteDb.prepare("PRAGMA table_info(orders)").all();
+        const hasTrackingCol = orderCols.some(c => c.name === 'tracking_code_hash');
+        if (!hasTrackingCol) {
+          sqliteDb.exec("ALTER TABLE orders ADD COLUMN tracking_code_hash TEXT;");
+          console.log('📦 Colonne tracking_code_hash ajoutée à la table orders.');
+        }
+      } catch (migErr) {
+        console.warn('Note migration SQLite orders.tracking_code_hash:', migErr.message);
+      }
+
+      // 2. Migration non-destructive : vérifier si orders supporte 'refund_pending'
+      try {
+        const stmt = sqliteDb.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='orders'");
+        const tableRow = stmt.get();
+        if (tableRow && tableRow.sql && !tableRow.sql.includes("'refund_pending'")) {
+          sqliteDb.exec(`
+            PRAGMA foreign_keys = OFF;
+            CREATE TABLE IF NOT EXISTS orders_new (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              order_number TEXT NOT NULL UNIQUE,
+              tracking_code_hash TEXT,
+              user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+              customer_name TEXT NOT NULL,
+              customer_email TEXT NOT NULL,
+              customer_phone TEXT NOT NULL,
+              delivery_region TEXT NOT NULL,
+              delivery_city TEXT NOT NULL,
+              delivery_address TEXT NOT NULL,
+              delivery_notes TEXT,
+              delivery_zone_id INTEGER REFERENCES delivery_zones(id) ON DELETE SET NULL,
+              delivery_fee INTEGER NOT NULL DEFAULT 0,
+              subtotal INTEGER NOT NULL DEFAULT 0,
+              discount_amount INTEGER NOT NULL DEFAULT 0,
+              total_amount INTEGER NOT NULL DEFAULT 0,
+              order_status TEXT NOT NULL DEFAULT 'pending' CHECK(order_status IN (
+                'pending', 'confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'
+              )),
+              payment_method TEXT NOT NULL CHECK(payment_method IN (
+                'wave', 'orange_money', 'card', 'cash_on_delivery'
+              )),
+              payment_status TEXT NOT NULL DEFAULT 'pending' CHECK(payment_status IN (
+                'pending', 'paid', 'failed', 'refund_pending', 'refunded'
+              )),
+              whatsapp_notified INTEGER NOT NULL DEFAULT 0,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+            INSERT INTO orders_new (
+              id, order_number, tracking_code_hash, user_id, customer_name, customer_email, customer_phone,
+              delivery_region, delivery_city, delivery_address, delivery_notes,
+              delivery_zone_id, delivery_fee, subtotal, discount_amount, total_amount,
+              order_status, payment_method, payment_status, whatsapp_notified, created_at, updated_at
+            )
+            SELECT 
+              id, order_number, tracking_code_hash, user_id, customer_name, customer_email, customer_phone,
+              delivery_region, delivery_city, delivery_address, delivery_notes,
+              delivery_zone_id, delivery_fee, subtotal, discount_amount, total_amount,
+              order_status, payment_method, payment_status, whatsapp_notified, created_at, updated_at 
+            FROM orders;
+            DROP TABLE orders;
+            ALTER TABLE orders_new RENAME TO orders;
+            CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
+            CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(order_status);
+            CREATE INDEX IF NOT EXISTS idx_orders_number ON orders(order_number);
+            PRAGMA foreign_keys = ON;
+          `);
+          console.log('📦 Table orders migrée avec support du statut refund_pending.');
+        }
+      } catch (migErr) {
+        console.warn('Note migration SQLite orders.payment_status:', migErr.message);
+      }
+
+      // 3. Migration non-destructive : vérifier si payments supporte 'paid' et 'refund_pending'
       try {
         const stmt = sqliteDb.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='payments'");
         const tableRow = stmt.get();
-        if (tableRow && tableRow.sql && !tableRow.sql.includes("'paid'")) {
+        if (tableRow && tableRow.sql && (!tableRow.sql.includes("'paid'") || !tableRow.sql.includes("'refund_pending'"))) {
           sqliteDb.exec(`
+            PRAGMA foreign_keys = OFF;
             CREATE TABLE IF NOT EXISTS payments_new (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
@@ -133,7 +242,7 @@ export async function initSchema() {
               transaction_id TEXT UNIQUE,
               amount INTEGER NOT NULL,
               currency TEXT NOT NULL DEFAULT 'XOF',
-              status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'processing', 'successful', 'paid', 'failed', 'cancelled', 'refunded')),
+              status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'processing', 'successful', 'paid', 'failed', 'cancelled', 'refund_pending', 'refunded')),
               raw_response TEXT,
               created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );
@@ -143,7 +252,9 @@ export async function initSchema() {
             ALTER TABLE payments_new RENAME TO payments;
             CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id);
             CREATE INDEX IF NOT EXISTS idx_payments_transaction ON payments(transaction_id);
+            PRAGMA foreign_keys = ON;
           `);
+          console.log('📦 Table payments migrée avec support des statuts paid et refund_pending.');
         }
       } catch (migErr) {
         console.warn('Note migration SQLite payments:', migErr.message);

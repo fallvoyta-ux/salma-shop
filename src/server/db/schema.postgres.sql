@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS delivery_zones (
 CREATE TABLE IF NOT EXISTS orders (
   id SERIAL PRIMARY KEY,
   order_number VARCHAR(50) NOT NULL UNIQUE,
+  tracking_code_hash VARCHAR(64),
   user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   customer_name VARCHAR(150) NOT NULL,
   customer_email VARCHAR(255) NOT NULL,
@@ -95,7 +96,7 @@ CREATE TABLE IF NOT EXISTS orders (
     'wave', 'orange_money', 'card', 'cash_on_delivery'
   )),
   payment_status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK(payment_status IN (
-    'pending', 'paid', 'failed', 'refunded'
+    'pending', 'paid', 'failed', 'refund_pending', 'refunded'
   )),
   whatsapp_notified SMALLINT DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -181,3 +182,15 @@ CREATE TABLE IF NOT EXISTS contacts (
 );
 
 CREATE INDEX IF NOT EXISTS idx_contacts_created_at ON contacts(created_at DESC);
+
+-- 13. Table de stockage persistant des médias (fallback sans Cloudinary)
+CREATE TABLE IF NOT EXISTS uploaded_files (
+  id SERIAL PRIMARY KEY,
+  filename VARCHAR(255) NOT NULL UNIQUE,
+  mime_type VARCHAR(100) NOT NULL,
+  data BYTEA NOT NULL,
+  size_bytes INTEGER NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_uploaded_files_filename ON uploaded_files(filename);

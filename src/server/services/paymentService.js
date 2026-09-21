@@ -69,6 +69,9 @@ export const paymentService = {
       }
 
       if (!waveLaunchUrl) {
+        if (isLive) {
+          throw new Error('Impossible d’initialiser le paiement Wave en mode réel : session de paiement non générée par l’API Wave.');
+        }
         waveLaunchUrl = config.wave.merchantUrl || 'https://pay.wave.com/m/M_5iS6VUrJnTx-/c/sn/';
         checkoutUrl = waveLaunchUrl;
       }

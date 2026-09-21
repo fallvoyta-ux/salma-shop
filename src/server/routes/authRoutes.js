@@ -15,6 +15,13 @@ function generateToken(user) {
   );
 }
 
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: config.env === 'production',
+  sameSite: 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000
+};
+
 // Inscription client
 router.post('/register', async (req, res, next) => {
   try {
@@ -63,6 +70,9 @@ router.post('/register', async (req, res, next) => {
     );
 
     const token = generateToken(newUser);
+
+    // Définition du cookie HttpOnly sécurisé
+    res.cookie('salma_token', token, COOKIE_OPTIONS);
 
     res.status(201).json({
       success: true,
@@ -117,6 +127,9 @@ router.post('/login', async (req, res, next) => {
       created_at: user.created_at
     };
 
+    // Définition du cookie HttpOnly sécurisé
+    res.cookie('salma_token', token, COOKIE_OPTIONS);
+
     res.json({
       success: true,
       message: 'Connexion réussie !',
@@ -126,6 +139,15 @@ router.post('/login', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+// Déconnexion
+router.post('/logout', (req, res) => {
+  res.clearCookie('salma_token');
+  res.json({
+    success: true,
+    message: 'Déconnexion réussie.'
+  });
 });
 
 // Récupérer le profil connecté

@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS delivery_zones (
 CREATE TABLE IF NOT EXISTS orders (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   order_number TEXT NOT NULL UNIQUE,                   -- Ex: CMD-2026-000001
+  tracking_code_hash TEXT,                             -- Empreinte SHA-256 du code secret de suivi
   user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   customer_name TEXT NOT NULL,
   customer_email TEXT NOT NULL,
@@ -97,7 +98,7 @@ CREATE TABLE IF NOT EXISTS orders (
     'wave', 'orange_money', 'card', 'cash_on_delivery'
   )),
   payment_status TEXT NOT NULL DEFAULT 'pending' CHECK(payment_status IN (
-    'pending', 'paid', 'failed', 'refunded'
+    'pending', 'paid', 'failed', 'refund_pending', 'refunded'
   )),
   whatsapp_notified INTEGER NOT NULL DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -124,7 +125,7 @@ CREATE TABLE IF NOT EXISTS payments (
   transaction_id TEXT,
   amount INTEGER NOT NULL,
   currency TEXT NOT NULL DEFAULT 'XOF',
-  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'processing', 'paid', 'successful', 'failed', 'cancelled', 'refunded')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'processing', 'paid', 'successful', 'failed', 'cancelled', 'refund_pending', 'refunded')),
   raw_response TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -185,3 +186,15 @@ CREATE TABLE IF NOT EXISTS contacts (
 );
 
 CREATE INDEX IF NOT EXISTS idx_contacts_created_at ON contacts(created_at DESC);
+
+-- 13. Table de stockage persistant des médias (fallback sans Cloudinary)
+CREATE TABLE IF NOT EXISTS uploaded_files (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  filename TEXT NOT NULL UNIQUE,
+  mime_type TEXT NOT NULL,
+  data BLOB NOT NULL,
+  size_bytes INTEGER NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_uploaded_files_filename ON uploaded_files(filename);

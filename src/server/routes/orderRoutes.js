@@ -1,13 +1,28 @@
 import express from 'express';
+import crypto from 'crypto';
 import { db } from '../db/connection.js';
 import { authenticate, optionalAuthenticate } from '../middleware/auth.js';
+import { orderCreationLimiter, trackingLimiter } from '../middleware/rateLimiters.js';
 import { paymentService } from '../services/paymentService.js';
 import { notificationService } from '../services/notificationService.js';
 
+function safeCompare(a, b) {
+  const bufA = Buffer.from(String(a || ''), 'utf8');
+  const bufB = Buffer.from(String(b || ''), 'utf8');
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+function verifyTrackingCode(providedCode, storedHash) {
+  if (!providedCode || !storedHash) return false;
+  const hash = crypto.createHash('sha256').update(String(providedCode).trim()).digest('hex');
+  return safeCompare(hash, storedHash);
+}
+
 const router = express.Router();
 
-// Créer une commande
-router.post('/', optionalAuthenticate, async (req, res, next) => {
+// Créer une commande (limité à 40 req / 15 min / IP)
+router.post('/', orderCreationLimiter, optionalAuthenticate, async (req, res, next) => {
   try {
     const {
       customer_name,
@@ -65,6 +80,7 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
 
     let createdOrder = null;
     let orderItemsData = [];
+    let trackingCode = '';
 
     // Transaction DB réelle : toutes les opérations sont liées au même client SQL
     await db.transaction(async (tx) => {
@@ -137,18 +153,23 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
       const timestampPart = String(Date.now()).slice(-4);
       const orderNumber = `CMD-${datePart}-${timestampPart}${randomSuffix}`;
 
+      // Génération d'un code secret de suivi cryptographique à 6 chiffres
+      trackingCode = String(crypto.randomInt(100000, 999999));
+      const trackingCodeHash = crypto.createHash('sha256').update(trackingCode).digest('hex');
+
       const userId = req.user ? req.user.id : null;
 
       // Insertion de la commande dans la transaction
       const orderRes = await tx.execute(`
         INSERT INTO orders (
-          order_number, user_id, customer_name, customer_email, customer_phone,
+          order_number, tracking_code_hash, user_id, customer_name, customer_email, customer_phone,
           delivery_region, delivery_city, delivery_address, delivery_notes,
           delivery_zone_id, delivery_fee, subtotal, discount_amount, total_amount,
           order_status, payment_method, payment_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 'pending')
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 'pending')
       `, [
         orderNumber,
+        trackingCodeHash,
         userId,
         customer_name.trim(),
         (customer_email || '').trim().toLowerCase() || 'client@salmashop.sn',
@@ -187,6 +208,7 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
       }
 
       createdOrder = await tx.queryOne('SELECT * FROM orders WHERE id = ?', [orderId]);
+      createdOrder.tracking_code = trackingCode;
       orderItemsData = verifiedItems;
     });
 
@@ -205,13 +227,17 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
       throw payInitErr;
     }
 
-    // Générer le message et lien WhatsApp
+    // Générer le message et lien WhatsApp avec code secret de suivi
     const whatsappUrl = notificationService.getOrderWhatsAppUrl(createdOrder, orderItemsData);
+
+    // On ne renvoie jamais le hash stocké mais le code secret en clair pour cette réponse unique
+    const { tracking_code_hash: _, ...safeCreatedOrder } = createdOrder;
 
     res.status(201).json({
       success: true,
       message: 'Votre commande a été enregistrée avec succès !',
-      order: createdOrder,
+      order: safeCreatedOrder,
+      tracking_code: trackingCode,
       items: orderItemsData,
       payment: paymentInfo,
       whatsappUrl
@@ -224,11 +250,11 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
   }
 });
 
-// Suivi public d'une commande par son numéro (Données privées masquées pour respecter la vie privée)
-router.get('/track/:orderNumber', async (req, res, next) => {
+// Suivi public d'une commande par son numéro (Adresse privée protégée, limité à 10 req / 15 min / IP)
+router.get('/track/:orderNumber', trackingLimiter, optionalAuthenticate, async (req, res, next) => {
   try {
     const order = await db.queryOne(`
-      SELECT o.id, o.order_number, o.customer_name, o.customer_phone, o.delivery_city, o.delivery_address,
+      SELECT o.id, o.user_id, o.order_number, o.tracking_code_hash, o.customer_name, o.customer_phone, o.delivery_city, o.delivery_address,
              o.total_amount, o.delivery_fee, o.subtotal, o.order_status, o.payment_method, o.payment_status,
              o.created_at, z.name as zone_name
       FROM orders o
@@ -259,28 +285,57 @@ router.get('/track/:orderNumber', async (req, res, next) => {
       ? cleanPhone.slice(0, 4) + ' ••• •• ' + cleanPhone.slice(-2)
       : '•• ••• •• ••';
 
+    // Règle de confidentialité : L'adresse complète et les détails des produits sont protégés
     const safeOrder = {
       order_number: order.order_number,
       customer_name: maskedName,
       customer_phone: maskedPhone,
       delivery_city: order.delivery_city,
-      delivery_address: order.delivery_address || '',
-      delivery_fee: order.delivery_fee,
-      subtotal: order.subtotal,
-      total_amount: order.total_amount,
       order_status: order.order_status,
-      payment_method: order.payment_method,
       payment_status: order.payment_status,
       created_at: order.created_at,
-      zone_name: order.zone_name
+      zone_name: order.zone_name,
+      is_verified: false
     };
 
-    const whatsappUrl = notificationService.getOrderWhatsAppUrl(safeOrder, items);
+    // Accès étendu (adresse complète, détails financiers et liste nominative des produits) si :
+    // 1. Client connecté propriétaire de la commande
+    // 2. Administrateur connecté
+    // 3. Fourniture du code secret de suivi (exclusivement par header 'x-tracking-code' ou body)
+    const isOwner = req.user && order.user_id && Number(order.user_id) === Number(req.user.id);
+    const isAdmin = req.user && req.user.role === 'admin';
+    const providedTrackingCode = req.headers['x-tracking-code'] || (req.body && req.body.tracking_code);
+    const isCodeVerified = verifyTrackingCode(providedTrackingCode, order.tracking_code_hash);
+
+    let responseItems = [];
+    let whatsappUrl = null;
+
+    if (isAdmin || isOwner || isCodeVerified) {
+      safeOrder.delivery_address = order.delivery_address;
+      safeOrder.subtotal = order.subtotal;
+      safeOrder.delivery_fee = order.delivery_fee;
+      safeOrder.total_amount = order.total_amount;
+      safeOrder.payment_method = order.payment_method;
+      safeOrder.is_verified = true;
+      responseItems = items;
+      whatsappUrl = notificationService.getOrderWhatsAppUrl(order, items);
+    } else {
+      // Sans code secret : protection stricte de la vie privée !
+      // Ne divulguer ni le nom des produits, ni les images, ni les prix unitaires, ni les sous-totaux.
+      responseItems = items.map((it, idx) => ({
+        id: it.id,
+        product_name: `Article n°${idx + 1} (détail protégé 🔒)`,
+        quantity: it.quantity,
+        is_protected: true
+      }));
+      whatsappUrl = null;
+    }
 
     res.json({
       success: true,
       order: safeOrder,
-      items,
+      items: responseItems,
+      total_items_count: items.reduce((acc, it) => acc + (it.quantity || 1), 0),
       whatsappUrl
     });
   } catch (err) {
@@ -325,18 +380,17 @@ router.get('/:id', optionalAuthenticate, async (req, res, next) => {
       });
     }
 
-    // Protection stricte de l'accès aux commandes :
+    // Protection stricte de l'accès aux commandes complètes :
     const isOwner = req.user && order.user_id && Number(order.user_id) === Number(req.user.id);
     const isAdmin = req.user && req.user.role === 'admin';
-    const providedPhone = (req.query.phone || req.headers['x-order-phone'] || '').replace(/\D/g, '');
-    const orderPhone = (order.customer_phone || '').replace(/\D/g, '');
-    const isVerifiedGuest = !order.user_id && providedPhone && orderPhone && providedPhone.slice(-6) === orderPhone.slice(-6);
+    const providedTrackingCode = req.headers['x-tracking-code'] || (req.body && req.body.tracking_code);
+    const isVerifiedGuest = verifyTrackingCode(providedTrackingCode, order.tracking_code_hash);
 
     if (!isAdmin && !isOwner && !isVerifiedGuest) {
       const statusCode = req.user ? 403 : 401;
       return res.status(statusCode).json({
         success: false,
-        message: 'Accès non autorisé à cette commande. Veuillez vous connecter ou vérifier votre numéro de téléphone.'
+        message: 'Accès non autorisé à cette commande. Veuillez vous connecter ou fournir votre code secret de suivi.'
       });
     }
 
@@ -349,9 +403,12 @@ router.get('/:id', optionalAuthenticate, async (req, res, next) => {
       FROM payments WHERE order_id = ?
     `, [order.id]);
 
+    // Ne jamais exposer le hash de suivi en clair
+    const { tracking_code_hash: _, ...safeOrderDetails } = order;
+
     res.json({
       success: true,
-      order,
+      order: safeOrderDetails,
       items,
       payments
     });

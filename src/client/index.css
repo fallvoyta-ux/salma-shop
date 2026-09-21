@@ -779,6 +779,60 @@ button, input, select, textarea {
   transform: rotate(180deg);
 }
 
+/* Container de compte pour le positionnement */
+.account-menu-container {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Voile sombre tactile sur mobile/tablette */
+.account-dropdown-backdrop {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .account-dropdown-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1190;
+    animation: fadeIn 0.2s ease;
+  }
+}
+
+/* Bouton fermeture sur mobile */
+.dropdown-close-mobile {
+  display: none;
+  background: #f1f5f9;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+.dropdown-close-mobile:hover {
+  background: #e2e8f0;
+  color: var(--dark);
+}
+
+@media (max-width: 640px) {
+  .dropdown-close-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+}
+
 /* Menu déroulant ultra-moderne */
 .modern-dropdown-menu {
   position: absolute;
@@ -787,9 +841,10 @@ button, input, select, textarea {
   background: #ffffff;
   border: 1px solid #f1f5f9;
   border-radius: 18px;
-  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.16), 0 4px 16px -2px rgba(0, 0, 0, 0.08);
-  min-width: 270px;
-  z-index: 1000;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.18), 0 6px 20px -2px rgba(0, 0, 0, 0.08);
+  width: 295px;
+  max-width: calc(100vw - 24px);
+  z-index: 1200;
   overflow: hidden;
   animation: dropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -802,6 +857,13 @@ button, input, select, textarea {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+/* Sur mobile et iPhone, le dropdown dans le header est désactivé au profit de la modale portail 100% centrée */
+@media (max-width: 768px) {
+  .modern-dropdown-menu {
+    display: none !important;
   }
 }
 
@@ -828,10 +890,18 @@ button, input, select, textarea {
   flex-shrink: 0;
 }
 
+.dropdown-user-meta {
+  flex: 1;
+  min-width: 0;
+}
+
 .dropdown-user-name {
   font-weight: 700;
   font-size: 0.95rem;
   color: var(--dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dropdown-user-email {
@@ -839,7 +909,7 @@ button, input, select, textarea {
   color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 170px;
+  white-space: nowrap;
 }
 
 .dropdown-menu-list {
@@ -880,7 +950,7 @@ button, input, select, textarea {
 .dropdown-divider {
   height: 1px;
   background: #f1f5f9;
-  margin: 0.45rem 0;
+  margin: 0.55rem 0;
 }
 
 .dropdown-logout-btn {
@@ -904,65 +974,90 @@ button, input, select, textarea {
   background: #fef2f2;
 }
 
-/* Espace invité / Guest */
+/* Espace invité / Guest - 100% Ergonomique & Adapté tout appareil */
 .dropdown-guest-box {
-  padding: 1.25rem;
+  padding: 1.25rem 1.2rem;
 }
 
-.dropdown-guest-welcome {
-  margin-bottom: 1rem;
+.dropdown-guest-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 1.1rem;
 }
 
 .guest-welcome-title {
   font-size: 0.98rem;
   font-weight: 800;
   color: var(--dark);
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
 }
 
 .guest-welcome-sub {
   font-size: 0.8rem;
   color: var(--text-muted);
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
-.dropdown-login-btn {
-  display: block;
+/* Les 2 boutons d'actions clés : Se Connecter & Créer un Compte */
+.dropdown-guest-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.dropdown-btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   width: 100%;
+  min-height: 46px;
   text-align: center;
-  background: linear-gradient(135deg, var(--primary), #6d28d9);
+  background: linear-gradient(135deg, var(--primary), #7c3aed);
   color: #ffffff !important;
   font-weight: 700;
-  font-size: 0.9rem;
-  padding: 0.65rem 1rem;
+  font-size: 0.92rem;
+  padding: 0.7rem 1.2rem;
   border-radius: 50px;
   text-decoration: none;
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
-  transition: all 0.2s ease;
-  margin-bottom: 0.75rem;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.28);
+  transition: all 0.22s ease;
+  user-select: none;
 }
 
-.dropdown-login-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(244, 63, 94, 0.4);
+.dropdown-btn-primary:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.42);
 }
 
-.dropdown-register-link {
-  display: block;
+.dropdown-btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 46px;
   text-align: center;
-  font-size: 0.82rem;
-  color: var(--text-muted);
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  color: var(--dark) !important;
+  font-weight: 700;
+  font-size: 0.92rem;
+  padding: 0.7rem 1.2rem;
+  border-radius: 50px;
   text-decoration: none;
-  padding: 0.25rem;
-  transition: color 0.15s ease;
+  transition: all 0.22s ease;
+  user-select: none;
 }
 
-.dropdown-register-link strong {
-  color: var(--primary);
-}
-
-.dropdown-register-link:hover strong {
-  text-decoration: underline;
+.dropdown-btn-secondary:hover {
+  background: #ffffff;
+  border-color: var(--primary);
+  color: var(--primary) !important;
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.16);
+  transform: translateY(-1.5px);
 }
 
 .dropdown-admin-link {
@@ -974,7 +1069,7 @@ button, input, select, textarea {
   font-weight: 600;
   color: #64748b;
   text-decoration: none;
-  padding: 0.4rem;
+  padding: 0.45rem 0.5rem;
   border-radius: 8px;
   transition: all 0.15s ease;
 }
@@ -982,6 +1077,309 @@ button, input, select, textarea {
 .dropdown-admin-link:hover {
   background: #f8fafc;
   color: var(--primary);
+}
+
+/* Libellé mobile pill dans le bouton de compte */
+.account-mobile-pill-label {
+  display: none;
+}
+
+/* =========================================================
+   MODALE PORTAIL AUTH POUR MOBILE & IPHONE (100% CENTRÉE)
+   Rendue directement dans document.body (zéro bug WebKit sticky)
+   ========================================================= */
+
+.auth-portal-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  box-sizing: border-box;
+  animation: portalFadeIn 0.2s ease-out;
+}
+
+@keyframes portalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.auth-portal-card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 390px;
+  margin: auto;
+  border-radius: 26px;
+  padding: 1.65rem 1.4rem 1.45rem;
+  box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  animation: portalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes portalScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.auth-portal-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 1.25rem;
+}
+
+.auth-portal-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.auth-portal-avatar-large {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #9333ea);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.35rem;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  flex-shrink: 0;
+}
+
+.auth-portal-titles {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.auth-portal-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--dark);
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+
+.auth-portal-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.auth-portal-close {
+  background: #f1f5f9;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.auth-portal-close:hover {
+  background: #e2e8f0;
+  color: var(--dark);
+}
+
+.auth-portal-intro {
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.45;
+  text-align: left;
+  margin-bottom: 1.25rem;
+}
+
+/* Les 2 boutons principaux sur mobile */
+.auth-portal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  width: 100%;
+}
+
+.auth-portal-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 50px;
+  border-radius: 50px;
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.auth-portal-btn .btn-icon {
+  font-size: 1.1rem;
+}
+
+.auth-portal-btn.primary {
+  background: linear-gradient(135deg, var(--primary), #7c3aed);
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);
+}
+
+.auth-portal-btn.primary:active {
+  transform: scale(0.98);
+}
+
+.auth-portal-btn.secondary {
+  background: #f8fafc;
+  color: var(--dark);
+  border: 1.5px solid #cbd5e1;
+}
+
+.auth-portal-btn.secondary:active {
+  background: #f1f5f9;
+  transform: scale(0.98);
+}
+
+.auth-portal-divider {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 1.15rem 0 0.85rem;
+  width: 100%;
+}
+
+.auth-portal-admin-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.auth-portal-admin-link:hover {
+  color: var(--primary);
+  background: #f8fafc;
+}
+
+/* Pour utilisateur connecté */
+.auth-portal-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 0.9rem 1.1rem;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 14px;
+  color: var(--dark);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 0.65rem;
+  transition: all 0.2s ease;
+}
+
+.auth-portal-item:hover, .auth-portal-item:active {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.auth-portal-item.admin {
+  background: #faf5ff;
+  border-color: #f3e8ff;
+  color: var(--primary);
+}
+
+.auth-portal-item .auth-portal-icon {
+  font-size: 1.25rem;
+}
+
+.auth-portal-item .auth-portal-text {
+  flex: 1;
+  text-align: left;
+}
+
+.auth-portal-item .auth-portal-arrow {
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.auth-portal-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0.78rem;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-radius: 50px;
+  color: #ef4444;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.auth-portal-logout:active {
+  background: #fee2e2;
+}
+
+/* Classes utilitaires pour pages Auth (Login & Register) */
+.auth-card {
+  padding: 2.5rem;
+  transition: padding 0.2s ease;
+}
+
+.auth-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 540px) {
+  .auth-card {
+    padding: 1.4rem 1.15rem !important;
+    border-radius: 16px !important;
+  }
+  .auth-grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
 }
 
 /* Bouton Panier Kahpoo */
@@ -1566,7 +1964,7 @@ button, input, select, textarea {
   color: #94a3b8;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .modern-footer::before {
@@ -1793,6 +2191,9 @@ button, input, select, textarea {
   border-color: #00f2fe;
   box-shadow: 0 4px 14px rgba(0, 242, 254, 0.25);
 }
+
+
+
 
 .social-btn.instagram:hover {
   background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
@@ -2642,8 +3043,8 @@ button, input, select, textarea {
 
 @media (max-width: 768px) {
   .kahpoo-header-main {
-    flex-wrap: wrap;
-    gap: 0.85rem;
+    flex-wrap: nowrap !important;
+    gap: 0.5rem;
   }
   .kahpoo-omnibar {
     order: 3;
@@ -3865,24 +4266,55 @@ html, body {
   }
 }
 
-/* 11. Header Mobile Optimisé */
+/* 11. Header Mobile Optimisé (iPhone & Tout Écran Téléphone) */
 @media (max-width: 600px) {
+  .kahpoo-header .container {
+    padding: 0 0.75rem !important;
+  }
   .kahpoo-header-main {
-    padding: 0.6rem 0 !important;
+    padding: 0.52rem 0 !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+  }
+  .kahpoo-logo-wrap {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    gap: 7px !important;
+    overflow: hidden !important;
   }
   .kahpoo-logo-img {
-    width: 40px !important;
-    height: 40px !important;
+    width: 36px !important;
+    height: 36px !important;
+    flex-shrink: 0 !important;
+  }
+  .kahpoo-logo-text {
+    min-width: 0 !important;
+    overflow: hidden !important;
   }
   .kahpoo-brand-name {
-    font-size: 1.05rem !important;
+    font-size: 0.88rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    line-height: 1.15 !important;
   }
   .kahpoo-brand-sub {
-    font-size: 0.62rem !important;
-    letter-spacing: 1px !important;
+    font-size: 0.55rem !important;
+    letter-spacing: 0.5px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    opacity: 0.9 !important;
+  }
+  .kahpoo-header-actions {
+    margin-left: auto !important;
+    gap: 7px !important;
+    flex-shrink: 0 !important;
   }
   .modern-account-btn {
-    padding: 0.4rem 0.65rem !important;
+    padding: 0.35rem 0.65rem 0.35rem 0.4rem !important;
+    gap: 6px !important;
+    border-radius: 50px !important;
   }
   .account-text-wrap {
     display: none !important;
@@ -3890,8 +4322,22 @@ html, body {
   .account-chevron {
     display: none !important;
   }
+  .account-mobile-pill-label {
+    display: inline-block !important;
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    white-space: nowrap !important;
+  }
+  .account-avatar-circle {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 0.8rem !important;
+  }
   .kahpoo-cart-btn {
-    padding: 0.45rem 0.75rem !important;
+    padding: 0.35rem 0.65rem !important;
+    gap: 6px !important;
+    border-radius: 50px !important;
   }
   .kahpoo-cart-btn span[style*="fontSize"] {
     display: none !important; /* Masque le montant sur mobile très étroit pour ne pas écraser le logo */

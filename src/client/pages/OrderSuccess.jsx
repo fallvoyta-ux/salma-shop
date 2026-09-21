@@ -9,7 +9,16 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedTrackingCode, setCopiedTrackingCode] = useState(false);
   const [autoRedirectTriggered, setAutoRedirectTriggered] = useState(false);
+  const [trackingCode, setTrackingCode] = useState(() => {
+    try {
+      const cleanNumber = String(orderNumber || '').trim();
+      return sessionStorage.getItem(`salma_tracking_${cleanNumber}`) || '';
+    } catch (e) {
+      return '';
+    }
+  });
 
   // 2. Chargement des détails de la commande
   useEffect(() => {
@@ -26,7 +35,13 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
           return;
         }
 
-        const res = await fetch(`/api/orders/track/${encodeURIComponent(cleanNumber)}`);
+        const savedCode = trackingCode || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(`salma_tracking_${cleanNumber}`) : '');
+        if (savedCode && !trackingCode) {
+          setTrackingCode(savedCode);
+        }
+
+        const headers = savedCode ? { 'x-tracking-code': savedCode } : {};
+        const res = await fetch(`/api/orders/track/${encodeURIComponent(cleanNumber)}`, { headers });
         const data = await res.json();
         if (!cancelled) {
           if (data.success && data.order) {
@@ -265,11 +280,51 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
               color: 'var(--dark)',
               fontFamily: 'var(--font-heading)',
               letterSpacing: '1px',
-              marginBottom: '2rem'
+              marginBottom: '1.25rem'
             }}
           >
             N° de Commande : <span style={{ color: 'var(--primary)' }}>{orderNumber || order?.order_number}</span>
           </div>
+
+          {/* Affichage sécurisé du code secret de suivi */}
+          {trackingCode && (
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #f8fafc 0%, #ede9fe 100%)',
+                border: '2px solid var(--primary)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '1.25rem',
+                maxWidth: '480px',
+                margin: '0 auto 2rem',
+                textAlign: 'center',
+                boxShadow: 'var(--shadow-sm)'
+              }}
+            >
+              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
+                🔑 Votre Code Secret de Suivi
+              </div>
+              <div style={{ fontSize: '2.1rem', fontWeight: 900, letterSpacing: '6px', color: 'var(--dark)', fontFamily: 'var(--font-heading)', margin: '0.25rem 0' }}>
+                {trackingCode}
+              </div>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: 1.4 }}>
+                Conservez ce code confidentiel. Il vous permet de suivre votre colis en toute sécurité et de protéger votre adresse de livraison.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                    navigator.clipboard.writeText(trackingCode);
+                    setCopiedTrackingCode(true);
+                    setTimeout(() => setCopiedTrackingCode(false), 3000);
+                  }
+                }}
+                className="btn btn-sm btn-outline"
+                style={{ fontSize: '0.8rem', padding: '0.4rem 1rem' }}
+              >
+                {copiedTrackingCode ? '✓ Code copié !' : '📋 Copier le code secret'}
+              </button>
+            </div>
+          )}
 
           {/* SECTION DÉDIÉE PAIEMENT DIRECT WAVE */}
           {paymentMethod === 'wave' && (
@@ -335,10 +390,10 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                   lineHeight: 1.6
                 }}
               >
-                <div style={{ fontWeight: 800, marginBottom: '8px' }}>Comment valider votre paiement :</div>
-                <div>1️⃣ Cliquez sur le bouton bleu ci-dessous pour ouvrir directement la page <strong>Groupe SALMA FALL</strong> sur Wave.</div>
-                <div>2️⃣ Saisissez simplement le montant (<strong>{formatPrice(totalAmount)}</strong>) et validez votre règlement.</div>
-                <div>3️⃣ Dès confirmation dans Wave, cliquez sur le bouton vert WhatsApp pour nous transmettre votre message d'envoi réussi !</div>
+                <div style={{ fontWeight: 800, marginBottom: '8px' }}>Paiement Wave : Effectuez le paiement puis confirmez</div>
+                <div>1️⃣ Cliquez sur le bouton bleu ci-dessous pour ouvrir la page <strong>Groupe SALMA FALL</strong> sur Wave.</div>
+                <div>2️⃣ Saisissez le montant exact de votre commande (<strong>{formatPrice(totalAmount)}</strong>) et validez votre règlement.</div>
+                <div>3️⃣ Dès validation dans votre application Wave, cliquez sur le bouton vert WhatsApp ci-dessous pour nous transmettre votre confirmation.</div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxWidth: '430px', margin: '0 auto' }}>
@@ -460,10 +515,10 @@ export default function OrderSuccess({ orderNumber, onNavigate }) {
                   lineHeight: 1.6
                 }}
               >
-                <div style={{ fontWeight: 800, marginBottom: '8px' }}>Comment valider votre paiement :</div>
-                <div>1️⃣ Cliquez sur le bouton orange ci-dessous pour ouvrir directement <strong>Orange Money (Max it)</strong>.</div>
-                <div>2️⃣ Saisissez le montant de votre commande (<strong>{formatPrice(totalAmount)}</strong>) et validez avec votre code secret.</div>
-                <div>3️⃣ Dès confirmation reçue, cliquez sur le bouton vert WhatsApp ci-dessous pour nous envoyer votre reçu officiel !</div>
+                <div style={{ fontWeight: 800, marginBottom: '8px' }}>Paiement Orange Money : Effectuez le paiement puis confirmez</div>
+                <div>1️⃣ Cliquez sur le bouton ci-dessous pour ouvrir <strong>Max it</strong> ou scannez le QR code avec votre téléphone.</div>
+                <div>2️⃣ Effectuez le transfert de <strong>{formatPrice(totalAmount)}</strong> vers le compte marchand <strong>Groupe SALMA FALL (+221 77 201 86 97)</strong>.</div>
+                <div>3️⃣ Dès réception de votre SMS Orange Money, cliquez sur le bouton WhatsApp pour nous transmettre votre capture/référence afin de finaliser la commande.</div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxWidth: '430px', margin: '0 auto' }}>
