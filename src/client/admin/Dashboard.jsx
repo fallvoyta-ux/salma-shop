@@ -254,48 +254,101 @@ export default function Dashboard({ onNavigate }) {
           </a>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-          <thead>
-            <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-              <th style={{ padding: '0.75rem 1rem' }}>Numéro</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Client</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Montant</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Paiement</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Statut</th>
-              <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {stats.recent_orders.map((o) => (
-              <tr key={o.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                <td style={{ padding: '0.85rem 1rem', fontWeight: 700 }}>{o.order_number}</td>
-                <td style={{ padding: '0.85rem 1rem' }}>
-                  <div>{o.customer_name}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{o.customer_phone}</div>
-                </td>
-                <td style={{ padding: '0.85rem 1rem', fontWeight: 800 }}>{formatPrice(o.total_amount)}</td>
-                <td style={{ padding: '0.85rem 1rem' }}>
-                  <span className="badge" style={{ background: o.payment_status === 'paid' ? 'var(--success-bg)' : '#fef3c7', color: o.payment_status === 'paid' ? 'var(--success)' : '#92400e' }}>
-                    {o.payment_status === 'paid' ? 'Payé' : 'En attente'}
+        {/* Tableau desktop des commandes récentes */}
+        <div className="admin-desktop-table" style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', minWidth: '650px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+            <thead>
+              <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                <th style={{ padding: '0.75rem 1rem' }}>Numéro</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Client</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Montant</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Paiement</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Statut</th>
+                <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.recent_orders.map((o) => (
+                <tr key={o.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700 }}>{o.order_number}</td>
+                  <td style={{ padding: '0.85rem 1rem' }}>
+                    <div>{o.customer_name}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{o.customer_phone}</div>
+                  </td>
+                  <td style={{ padding: '0.85rem 1rem', fontWeight: 800 }}>{formatPrice(o.total_amount)}</td>
+                  <td style={{ padding: '0.85rem 1rem' }}>
+                    <span className="badge" style={{ background: o.payment_status === 'paid' ? 'var(--success-bg)' : '#fef3c7', color: o.payment_status === 'paid' ? 'var(--success)' : '#92400e' }}>
+                      {o.payment_status === 'paid' ? 'Payé' : 'En attente'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '0.85rem 1rem' }}>
+                    <span className={`badge badge-status-${o.order_status}`}>
+                      {o.order_status}
+                    </span>
+                  </td>
+                  <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
+                    <button
+                      className="btn btn-outline btn-sm"
+                      onClick={() => onNavigate(`/admin/orders`)}
+                    >
+                      Gérer
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Cartes tactiles mobiles des commandes récentes */}
+        <div className="admin-mobile-cards">
+          {stats.recent_orders.map((o) => (
+            <div
+              key={o.id}
+              className="admin-card-item"
+              style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--primary)', fontFamily: 'var(--font-heading)' }}>
+                    {o.order_number}
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: '0.9rem', marginTop: '2px' }}>
+                    {o.customer_name}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    {o.customer_phone}
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--dark)' }}>
+                    {formatPrice(o.total_amount)}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  <span className="badge" style={{ fontSize: '0.75rem', background: o.payment_status === 'paid' ? 'var(--success-bg)' : '#fef3c7', color: o.payment_status === 'paid' ? 'var(--success)' : '#92400e' }}>
+                    {o.payment_status === 'paid' ? 'Payé ✓' : 'En attente'}
                   </span>
-                </td>
-                <td style={{ padding: '0.85rem 1rem' }}>
-                  <span className={`badge badge-status-${o.order_status}`}>
+                  <span className={`badge badge-status-${o.order_status}`} style={{ fontSize: '0.75rem' }}>
                     {o.order_status}
                   </span>
-                </td>
-                <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
-                  <button
-                    className="btn btn-outline btn-sm"
-                    onClick={() => onNavigate(`/admin/orders`)}
-                  >
-                    Gérer
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+
+                <button
+                  className="btn btn-outline btn-sm"
+                  style={{ minHeight: '36px', fontWeight: 600 }}
+                  onClick={() => onNavigate(`/admin/orders`)}
+                >
+                  Gérer →
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

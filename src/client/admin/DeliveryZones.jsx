@@ -136,8 +136,9 @@ export default function DeliveryZones({ onNavigate }) {
         </button>
       </div>
 
-      <div style={{ background: '#fff', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+      {/* Tableau des zones de livraison (Desktop) */}
+      <div className="admin-desktop-table" style={{ background: '#fff', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflowX: 'auto', boxShadow: 'var(--shadow-sm)' }}>
+        <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
           <thead>
             <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '0.8rem' }}>
               <th style={{ padding: '1rem 1.25rem' }}>Zone de Livraison</th>
@@ -181,6 +182,67 @@ export default function DeliveryZones({ onNavigate }) {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Cartes Mobiles pour smartphones */}
+      <div className="admin-mobile-cards">
+        {loading ? (
+          <div style={{ background: '#fff', padding: '2.5rem 1rem', textAlign: 'center', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+            Chargement des zones...
+          </div>
+        ) : zones.length === 0 ? (
+          <div style={{ background: '#fff', padding: '2.5rem 1rem', textAlign: 'center', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+            Aucune zone de livraison configurée.
+          </div>
+        ) : (
+          zones.map((z) => (
+            <div
+              key={z.id}
+              className="admin-card-item"
+            >
+              {/* Entête zone : Nom et Prix */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--dark)' }}>
+                    📍 {z.name}
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '3px' }}>
+                    ⏱️ Délai : <strong>{z.estimated_days || 'Non spécifié'}</strong>
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{
+                    fontSize: '1.05rem',
+                    fontWeight: 800,
+                    color: z.price === 0 ? 'var(--success)' : 'var(--primary)'
+                  }}>
+                    {z.price === 0 ? 'Gratuit' : formatPrice(z.price)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Boutons d'action */}
+              <div style={{ display: 'flex', gap: '0.5rem', paddingTop: '0.65rem', borderTop: '1px solid var(--border)' }}>
+                <button
+                  className="btn btn-outline btn-sm"
+                  style={{ flex: 1, minHeight: '40px', fontWeight: 600 }}
+                  onClick={() => handleOpenEdit(z)}
+                >
+                  ✏️ Modifier
+                </button>
+                <button
+                  className="btn btn-outline btn-sm"
+                  style={{ minHeight: '40px', minWidth: '44px', color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                  onClick={() => handleDelete(z.id)}
+                  title="Supprimer cette zone"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       <Modal

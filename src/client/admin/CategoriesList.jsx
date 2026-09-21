@@ -145,8 +145,9 @@ export default function CategoriesList({ onNavigate }) {
         </button>
       </div>
 
-      <div style={{ background: '#fff', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+      {/* Tableau des catégories (Desktop) */}
+      <div className="admin-desktop-table" style={{ background: '#fff', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflowX: 'auto', boxShadow: 'var(--shadow-sm)' }}>
+        <table style={{ width: '100%', minWidth: '700px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
           <thead>
             <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '0.8rem' }}>
               <th style={{ padding: '1rem 1.25rem' }}>Image & Catégorie</th>
@@ -208,6 +209,74 @@ export default function CategoriesList({ onNavigate }) {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Cartes Mobiles pour smartphones */}
+      <div className="admin-mobile-cards">
+        {loading ? (
+          <div style={{ background: '#fff', padding: '2.5rem 1rem', textAlign: 'center', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+            Chargement des catégories...
+          </div>
+        ) : categories.length === 0 ? (
+          <div style={{ background: '#fff', padding: '2.5rem 1rem', textAlign: 'center', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+            Aucune catégorie créée pour l'instant.
+          </div>
+        ) : (
+          categories.map((cat) => (
+            <div
+              key={cat.id}
+              className="admin-card-item"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                <img
+                  src={cat.image_url || 'https://images.unsplash.com/photo-1590736969955-71cc94801759?w=100&q=80'}
+                  alt=""
+                  style={{ width: '56px', height: '56px', borderRadius: 'var(--radius-md)', objectFit: 'cover', flexShrink: 0 }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--dark)' }}>{cat.name}</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>slug: {cat.slug}</div>
+                </div>
+                <span className="badge badge-stock" style={{ flexShrink: 0, fontSize: '0.75rem' }}>
+                  {cat.product_count || 0} produit(s)
+                </span>
+              </div>
+
+              {cat.description && (
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                  {cat.description}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.65rem', borderTop: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                  Ordre d'affichage : <strong>#{cat.display_order}</strong>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    className="btn btn-outline btn-sm"
+                    style={{ minHeight: '38px', padding: '0 14px', fontWeight: 600 }}
+                    onClick={() => handleOpenEdit(cat)}
+                  >
+                    ✏️ Modifier
+                  </button>
+                  <button
+                    className="btn btn-outline btn-sm"
+                    style={{ minHeight: '38px', padding: '0 12px', color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                    onClick={() => {
+                      setCatToDelete(cat);
+                      setDeleteModalOpen(true);
+                    }}
+                    title="Supprimer la catégorie"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Modale d'ajout / modification */}

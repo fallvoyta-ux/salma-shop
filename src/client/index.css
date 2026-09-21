@@ -4700,21 +4700,25 @@ html, body {
 }
 
 /* =========================================================
-   GESTION DES COMMANDES ADMIN RESPONSIVE (MOBILE & DESKTOP)
+   GESTION ADMIN RESPONSIVE GÉNÉRALE (MOBILE & DESKTOP)
    ========================================================= */
 
+.admin-desktop-table,
 .admin-orders-desktop-table {
   display: block;
 }
 
+.admin-mobile-cards,
 .admin-orders-mobile-cards {
   display: none;
 }
 
 @media (max-width: 768px) {
+  .admin-desktop-table,
   .admin-orders-desktop-table {
     display: none !important;
   }
+  .admin-mobile-cards,
   .admin-orders-mobile-cards {
     display: flex !important;
     flex-direction: column;
@@ -4722,10 +4726,21 @@ html, body {
   }
 }
 
-.admin-order-card {
+.admin-order-card,
+.admin-card-item {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.admin-order-card:active {
-  transform: scale(0.99);
+.admin-order-card:active,
+.admin-card-item:active {
+  transform: scale(0.995);
 }
+

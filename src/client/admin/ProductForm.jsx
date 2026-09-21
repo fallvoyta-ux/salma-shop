@@ -240,7 +240,7 @@ export default function ProductForm({ productId = null, onNavigate }) {
 
   return (
     <div style={{ maxWidth: '880px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ fontSize: '1.8rem', color: 'var(--dark)' }}>
             {isEditing ? 'Modifier le Produit' : 'Créer un Nouveau Produit'}
@@ -257,7 +257,7 @@ export default function ProductForm({ productId = null, onNavigate }) {
 
       <form onSubmit={handleSubmit}>
         {/* BLOC 1 : INFORMATIONS DE BASE */}
-        <div style={{ background: '#fff', padding: '2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', marginBottom: '2rem', boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ background: '#fff', padding: '1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', marginBottom: '2rem', boxShadow: 'var(--shadow-sm)' }}>
           <h3 style={{ fontSize: '1.2rem', marginBottom: '1.25rem', color: 'var(--dark)' }}>Informations Principales</h3>
 
           <div className="form-group">
@@ -272,7 +272,7 @@ export default function ProductForm({ productId = null, onNavigate }) {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
             <div className="form-group">
               <label className="form-label">Catégorie</label>
               <select
@@ -301,22 +301,22 @@ export default function ProductForm({ productId = null, onNavigate }) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Courte Description (Accroche)</label>
+            <label className="form-label">Description Courte</label>
             <input
               type="text"
               className="form-input"
-              placeholder="Ex: Robe fluide en véritable tissu Wax hollandais aux finitions dorées."
+              placeholder="Phrase d'accroche visible sous le titre du produit..."
               value={shortDescription}
               onChange={(e) => setShortDescription(e.target.value)}
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Description Complète</label>
+            <label className="form-label">Description Détaillée</label>
             <textarea
               className="form-textarea"
               rows={4}
-              placeholder="Décrivez en détail les matières, la coupe, l’inspiration et les conseils de style..."
+              placeholder="Détails du produit, coupe, matières, conseils d'entretien..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -324,10 +324,10 @@ export default function ProductForm({ productId = null, onNavigate }) {
         </div>
 
         {/* BLOC 2 : PRIX & GESTION DU STOCK */}
-        <div style={{ background: '#fff', padding: '2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', marginBottom: '2rem', boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ background: '#fff', padding: '1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', marginBottom: '2rem', boxShadow: 'var(--shadow-sm)' }}>
           <h3 style={{ fontSize: '1.2rem', marginBottom: '1.25rem', color: 'var(--dark)' }}>Prix & Inventaire</h3>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
             <div className="form-group">
               <label className="form-label">Prix de Vente (en FCFA) *</label>
               <input

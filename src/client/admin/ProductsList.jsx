@@ -138,9 +138,9 @@ export default function ProductsList({ onNavigate }) {
         )}
       </div>
 
-      {/* Tableau des produits */}
-      <div style={{ background: '#fff', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+      {/* Tableau des produits (Desktop) */}
+      <div className="admin-desktop-table" style={{ background: '#fff', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflowX: 'auto', boxShadow: 'var(--shadow-sm)' }}>
+        <table style={{ width: '100%', minWidth: '850px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
           <thead>
             <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '0.8rem' }}>
               <th style={{ padding: '1rem 1.25rem' }}>Produit</th>
@@ -264,6 +264,151 @@ export default function ProductsList({ onNavigate }) {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Cartes Mobiles pour smartphones */}
+      <div className="admin-mobile-cards">
+        {loading ? (
+          <div style={{ background: '#fff', padding: '2.5rem 1rem', textAlign: 'center', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+            Chargement des produits...
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div style={{ background: '#fff', padding: '2.5rem 1rem', textAlign: 'center', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+            Aucun produit trouvé.
+          </div>
+        ) : (
+          filteredProducts.map((p) => (
+            <div
+              key={p.id}
+              className="admin-card-item"
+            >
+              {/* Entête produit : Photo, Nom, Badges */}
+              <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
+                <img
+                  src={p.primary_image || 'https://images.unsplash.com/photo-1590736969955-71cc94801759?w=100&q=80'}
+                  alt=""
+                  style={{ width: '60px', height: '60px', borderRadius: 'var(--radius-md)', objectFit: 'cover', flexShrink: 0 }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--dark)', lineHeight: '1.3' }}>
+                    {p.name}
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.25rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      🏷️ {p.category_name || 'Non catégorisé'}
+                    </span>
+                    {p.sku && (
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                        • SKU: {p.sku}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ marginTop: '0.35rem' }}>
+                    {p.is_featured === 1 && <span className="badge badge-new" style={{ fontSize: '0.65rem', marginRight: '4px' }}>Vedette</span>}
+                    {p.is_promo === 1 && <span className="badge badge-promo" style={{ fontSize: '0.65rem' }}>Promo</span>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Prix */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid #edf2f7' }}>
+                <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>Prix de vente :</span>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--dark)' }}>
+                    {formatPrice(p.price)}
+                  </span>
+                  {p.compare_price && (
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textDecoration: 'line-through', marginLeft: '0.5rem' }}>
+                      {formatPrice(p.compare_price)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Contrôles tactiles rapides : Stock & Statut */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', alignItems: 'center' }}>
+                {/* Modification directe du stock */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Stock :
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <input
+                      type="number"
+                      defaultValue={p.stock}
+                      onBlur={(e) => handleUpdateStock(p, e.target.value)}
+                      style={{
+                        width: '75px',
+                        minHeight: '40px',
+                        padding: '4px 8px',
+                        textAlign: 'center',
+                        fontSize: '0.95rem',
+                        fontWeight: 800,
+                        borderRadius: 'var(--radius-md)',
+                        border: p.stock <= p.low_stock_threshold ? '2px solid var(--danger)' : '1.5px solid var(--border)',
+                        color: p.stock <= p.low_stock_threshold ? 'var(--danger)' : 'var(--dark)',
+                        background: p.stock <= p.low_stock_threshold ? '#fff5f5' : '#fff'
+                      }}
+                    />
+                    {p.stock <= p.low_stock_threshold && (
+                      <span style={{ fontSize: '0.72rem', color: 'var(--danger)', fontWeight: 700 }}>
+                        ⚠️ Bas
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Activation / Désactivation tactile */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Statut :
+                  </label>
+                  <button
+                    onClick={() => handleToggleStatus(p)}
+                    style={{
+                      minHeight: '40px',
+                      padding: '6px 12px',
+                      borderRadius: 'var(--radius-md)',
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      background: p.is_active === 1 ? 'var(--success-bg)' : '#fee2e2',
+                      color: p.is_active === 1 ? 'var(--success)' : 'var(--danger)',
+                      border: `1.5px solid ${p.is_active === 1 ? '#a7f3d0' : '#fecaca'}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {p.is_active === 1 ? '✅ Actif' : '❌ Désactivé'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Boutons d'action */}
+              <div style={{ display: 'flex', gap: '0.5rem', paddingTop: '0.65rem', borderTop: '1px solid var(--border)' }}>
+                <button
+                  className="btn btn-outline"
+                  style={{ flex: 1, minHeight: '42px', fontWeight: 700, fontSize: '0.88rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem' }}
+                  onClick={() => onNavigate(`/admin/products/${p.id}/edit`)}
+                >
+                  ✏️ Modifier la fiche
+                </button>
+                <button
+                  className="btn btn-outline"
+                  style={{ minHeight: '42px', minWidth: '48px', color: 'var(--danger)', borderColor: 'var(--danger)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                  onClick={() => {
+                    setProductToDelete(p);
+                    setDeleteModalOpen(true);
+                  }}
+                  title="Supprimer ce produit"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Modale de confirmation de suppression */}
