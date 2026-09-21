@@ -4698,3 +4698,34 @@ html, body {
 .footer-legal-links a:hover {
   color: #fff;
 }
+
+/* =========================================================
+   GESTION DES COMMANDES ADMIN RESPONSIVE (MOBILE & DESKTOP)
+   ========================================================= */
+
+.admin-orders-desktop-table {
+  display: block;
+}
+
+.admin-orders-mobile-cards {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .admin-orders-desktop-table {
+    display: none !important;
+  }
+  .admin-orders-mobile-cards {
+    display: flex !important;
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+.admin-order-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-order-card:active {
+  transform: scale(0.99);
+}
